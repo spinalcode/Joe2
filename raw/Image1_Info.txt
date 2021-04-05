@@ -1,0 +1,16 @@
+Image1
+
+Map Format: Text
+
+Map Size: 176x27 tiles
+Gfx Tile Size: 16x16 pixels
+
+Tiles File Size: 1x71 tiles
+
+Files Generated:
+  E:\_Backup\Programming\Pokitto\FemtoIDE\projects\!Joe_2\raw\Image1.map
+  E:\_Backup\Programming\Pokitto\FemtoIDE\projects\!Joe_2\raw\Image1_Tiles.bmp
+  E:\_Backup\Programming\Pokitto\FemtoIDE\projects\!Joe_2\raw\Image1_Info.txt
+
+Process Started: 11:25:20
+Process Ended: 11:25:23
