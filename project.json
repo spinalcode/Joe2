@@ -3206,6 +3206,21 @@
 		},
 		"\\raw\\maps\\midground.h": {
 			"sdcard": false
+		},
+		"\\collisionTile.bin": {
+			"sdcard": false
+		},
+		"\\midmap.bin": {
+			"sdcard": false
+		},
+		"\\palette.bin": {
+			"sdcard": true
+		},
+		"\\tilemap.bin": {
+			"sdcard": false
+		},
+		"\\tiles.bin": {
+			"sdcard": false
 		}
 	},
 	"BUILDFlags": {

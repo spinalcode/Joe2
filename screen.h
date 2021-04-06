@@ -93,7 +93,7 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
     uint32_t thisTile;
     uint32_t tileOffset=0;
 
-    #define bgTileLine()\
+    #define bgTileLineBG()\
         if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = midmap[2+tileIndex++];\
         tileStart = (thisTile&32767)*tbt;\
@@ -116,7 +116,7 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
             }\
         }
 
-    #define bgHalfTileLine()\
+    #define bgHalfTileLineBG()\
         if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = midmap[2+tileIndex++];\
         tileStart = (thisTile&32767)*tbt;\
@@ -140,17 +140,17 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
         }
 
     // unrolling this loop got an extra 10fps
-    bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
-    bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
-    bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
-    bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
-    bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
-    bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
-    bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
-    bgHalfTileLine(); 
+    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
+    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
+    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
+    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
+    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
+    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
+    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
+    bgHalfTileLineBG(); 
 }
 
-
+/*
 // render the collision map
 void myBGFiller3(std::uint8_t* line, std::uint32_t y, bool skip){
 
@@ -216,7 +216,7 @@ void myBGFiller3(std::uint8_t* line, std::uint32_t y, bool skip){
     bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
     bgHalfTileLine(); 
 }
-
+*/
 
 void write_command_(uint16_t data)
 {

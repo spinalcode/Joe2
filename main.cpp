@@ -1,4 +1,5 @@
 #include <Pokitto.h>
+#include <LibHotswap>
 
 #include <File>
 
@@ -7,8 +8,20 @@
 #include "sprites.h"
 #include "font.h"
 #include "background.h"
+
+// Make a hotswap area for level data
+// size = 512 bytes, unique id = 0
+using PaletteData = Hotswap<512, 0>; 
+
+// pointers to our data
+const uint8_t* paletteData = nullptr;
+
+
+
 #include "buttonhandling.h"
 #include "screen.h"
+#include <LibAudio>
+
 
 int printline = 4;
 
@@ -37,7 +50,7 @@ void updateMap(int mx, int my){
     uint32_t largeMapWidth = bg.mapWidth*2; // tiles * 2bytes
     uint32_t miniMapWidth = bg.miniMap[0]*2;
 
-    uint16_t tempLine[512];
+    //uint16_t tempLine[512];
 
     File file;
     if(file.openRO("level01.bin")){
@@ -96,9 +109,9 @@ void gameLogic(){
         int oldMapY = bg.mapY;
 
         player.speed = 2;
-        if(_B[HELD]) player.speed=4;
+        if(_B_But[HELD]) player.speed=4;
         
-        if(_Left[HELD]){
+        if(_Left_But[HELD]){
 
             for(int count=0; count<player.speed; count++){
                 if(collisionCheck(player.x-count-(player.width/2), player.y) && !collisionCheck(player.x-count-(player.width/2), player.y-1)){
@@ -112,7 +125,7 @@ void gameLogic(){
 
         }
         
-        if(_Right[HELD]){
+        if(_Right_But[HELD]){
 
             for(int count=0; count<player.speed; count++){
                 if(collisionCheck(player.x+(player.width/2)+count, player.y) && !collisionCheck(player.x+(player.width/2)+count, player.y-1)){
@@ -125,7 +138,7 @@ void gameLogic(){
             }
         }
 
-        if(_A[NEW] && player.gravity==0){
+        if(_A_But[NEW] && player.gravity==0){
             player.gravity = -12;
         }
 
@@ -198,7 +211,7 @@ void gameLogic(){
                 int temp = (bg.miniMap[2+x+bg.miniMap[0]*y]>>10)&31;
 
                 if(temp >0){
-                    Pokitto::Display::drawSprite(-bg.windowX +  x*8,-bg.windowY + y*8, tempSprite2);
+                    Pokitto::Display::drawSprite(-bg.windowX +  x*8,-bg.windowY + y*8, tempSprite);
                 }
                 
             }
@@ -239,7 +252,13 @@ int main(){
     using PS=Pokitto::Sound;
 
     PC::begin();
-    PD::load565Palette(palette);
+    
+    // load palette data immediately
+    paletteData = PaletteData::load("palette.bin"); 
+    PD::load565Palette((uint16_t*)paletteData);
+
+  
+    //PD::load565Palette(palette);
     PD::invisiblecolor = 0;
     PD::persistence = true;
     PD::adjustCharStep = 0;
@@ -268,16 +287,20 @@ int main(){
     //enableDAC();
     //playRandomTune();
     
-    PS::playMusicStream("music/tiletest/dkcjh2.pcm",0);
+    //PS::playMusicStream("music/tiletest/dkcjh2.pcm",0);
+    // stream music from the SD card
+    auto music = Audio::play("music/tiletest/dkcjh2.pcm"); // streams are on channel 0 by default
+    if(music) music->setLoop(true);
+
 
     updateButtons(); // update buttons
-    while(_A[HELD]){
+    while(_A_But[HELD]){
         updateButtons(); // update buttons
     }
 
     while( PC::isRunning() ){
         
-        //if( !PC::update(0) ) continue;
+        if( !PC::update(0) ) continue;
         //PS::updateStream();
 
         //updateStream();
@@ -288,7 +311,7 @@ int main(){
             tempTime = PC::getTime();
             updateButtons(); // update buttons
             gameLogic();
-            lcdRefreshTASMode(Pokitto::Display::palette); // update screen
+            //lcdRefreshTASMode(Pokitto::Display::palette); // update screen
             fpsCounter++;
             frameCount++;
         }
@@ -301,6 +324,11 @@ int main(){
         myPrint(0,8,tempText);
         sprintf(tempText,"%d,%d",bg.mapWidth,bg.mapHeight);
         myPrint(0,16,tempText);
+        if(music){
+            myPrint(0,24,"music open");
+        }else{
+            myPrint(0,24,"music fail");
+        }
 
 
         if(PC::getTime() >= lastMillis+1000){
@@ -308,27 +336,6 @@ int main(){
             fpsCount = fpsCounter;
             fpsCounter = 0;
         }
-
-/*
-        if(frameCount %3 == 0){
-            interlaceScreen = false;
-        }else{
-            interlaceScreen = true;
-        }
-*/
-/*
-        if(fpsCounter < 50){
-            interlaceScreen = true;
-        }else{
-            interlaceScreen = false;
-        }
-*/
-
-
-//    offsetAngle +=1;
-//    if(offsetAngle>=360)offsetAngle=0;
-
-    
 
 
     }

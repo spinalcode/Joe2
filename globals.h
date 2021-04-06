@@ -34,10 +34,10 @@ struct PLAYER_DATA {
     int speed=1;
 } player;
 
-    int screenX = 0;
-    int screenY = 0;
-    int oldScreenX = screenX;
-    int oldScreenY = screenY;
+int screenX = 0;
+int screenY = 0;
+int oldScreenX = screenX;
+int oldScreenY = screenY;
 
-    uint8_t tempTile[68];
+//uint8_t tempTile[68];
 
