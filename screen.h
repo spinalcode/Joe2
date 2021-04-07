@@ -14,6 +14,9 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
     // set bgcolor different for every line
     Pokitto::Display::palette[0] = hline_pal[hline[(y+(bg.mapY/4))]];
 
+    //Pokitto::Display::palette[138] = 0x3CEF;
+    //Pokitto::Display::palette[174] = 0xFFFF;
+
     uint32_t stX = (-bg.windowX)%bgTileSizeW;
     uint32_t x = stX;
     uint32_t tileIndex = bg.windowX/bgTileSizeW + ((y+bg.windowY)/bgTileSizeH) * bg.miniMap[0];

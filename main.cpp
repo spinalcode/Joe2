@@ -7,21 +7,21 @@
 //#include "sound.h"
 #include "sprites.h"
 #include "font.h"
-#include "background.h"
-
-// Make a hotswap area for level data
-// size = 512 bytes, unique id = 0
-using PaletteData = Hotswap<512, 0>; 
-
-// pointers to our data
-const uint8_t* paletteData = nullptr;
-
-
 
 #include "buttonhandling.h"
-#include "screen.h"
 #include <LibAudio>
 
+// Make a hotswap area for palette data
+// size = 512 bytes, unique id = 0
+using LevelData = Hotswap<122880, 0>; // multiple of 4kb
+
+// pointers to our data
+const uint8_t* levelData = nullptr;
+//const uint8_t* tiles = &levelData[512];
+const int16_t *tiles = reinterpret_cast<const int16_t*>(levelData + 512);
+
+#include "background.h"
+#include "screen.h"
 
 int printline = 4;
 
@@ -104,6 +104,7 @@ int collisionCheck(int x, int y){
 
 
 void gameLogic(){
+
 
         int oldMapX = bg.mapX;
         int oldMapY = bg.mapY;
@@ -252,12 +253,12 @@ int main(){
     using PS=Pokitto::Sound;
 
     PC::begin();
-    
-    // load palette data immediately
-    paletteData = PaletteData::load("palette.bin"); 
-    PD::load565Palette((uint16_t*)paletteData);
 
-  
+    // hotswap the level data    
+    levelData = LevelData::load("levelstuff.bin"); 
+    Pokitto::Display::load565Palette((uint16_t*)levelData);
+
+
     //PD::load565Palette(palette);
     PD::invisiblecolor = 0;
     PD::persistence = true;
@@ -300,7 +301,10 @@ int main(){
 
     while( PC::isRunning() ){
         
-        if( !PC::update(0) ) continue;
+        if( !PC::update() ) continue;
+
+        Pokitto::Display::drawSprite(220-32, 0, palette_sprite);
+
         //PS::updateStream();
 
         //updateStream();
@@ -324,12 +328,16 @@ int main(){
         myPrint(0,8,tempText);
         sprintf(tempText,"%d,%d",bg.mapWidth,bg.mapHeight);
         myPrint(0,16,tempText);
-        if(music){
-            myPrint(0,24,"music open");
+        
+        if(levelData == NULL){
+            myPrint(0,24,"level fail");
         }else{
-            myPrint(0,24,"music fail");
+            for(int t=0; t<14; t++){
+                sprintf(tempText,"%d",levelData[t]);
+                myPrint(0,32+(t*8),tempText);
+            }
         }
-
+        
 
         if(PC::getTime() >= lastMillis+1000){
             lastMillis = PC::getTime();

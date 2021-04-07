@@ -3221,6 +3221,12 @@
 		},
 		"\\tiles.bin": {
 			"sdcard": false
+		},
+		"\\levelStuff.bin": {
+			"sdcard": true
+		},
+		"\\levelStuff.bin.bak": {
+			"sdcard": false
 		}
 	},
 	"BUILDFlags": {
