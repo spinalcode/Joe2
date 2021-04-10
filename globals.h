@@ -1,3 +1,4 @@
+bool clearScreen=false;
 long int myDelay;
 long int tempTime;
 long int frameCount;
@@ -24,20 +25,44 @@ struct BACKGROUND_DATA {
 struct PLAYER_DATA {
     int x;  // x postition
     int y;  // y position
-    int height = 13;
-    int width = 16;
-    int frame; // tile number
-    float gravity; // how fast player is falling
-    float jumpHeight = 7.0;
-    float walkSpeed = 1.75;
-    int colTile;
-    int speed=1;
+    int vy; // for jumping
+    bool flip; // flip sprite
+    int jumpHeight = 1250;
+
+    int8_t hatX = -2;
+    int8_t hatY = 6;
+    uint8_t hatFrame = 6;
+    uint8_t frame; // tile number
+    uint8_t direction;
+    uint8_t step;
+    uint8_t gotHat = 0;
+    
+    int centre = 7;
+    int rightBound = 14;
+    int leftBound = 1;
+    int upperBound = 1;
+    int lowerBound = 15;
+    bool onGround;
+    bool falling;
+    bool jumping;
+    bool okToJump=false;
 } player;
+
+#define GRAVITY 48
+#define PLAYER_SPEED 512
 
 int screenX = 0;
 int screenY = 0;
 int oldScreenX = screenX;
 int oldScreenY = screenY;
 
-//uint8_t tempTile[68];
+int offsetAngle = 0;
+int sprite_anim_frame=0;
+
+struct PALETTE_DATA {
+    uint8_t r[256];
+    uint8_t g[256];
+    uint8_t b[256];
+    uint16_t rgb[256];
+} gamePalette;
 
