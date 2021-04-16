@@ -112,7 +112,7 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
 
     uint32_t stX = (-mX)%bgTileSizeW;
     uint32_t x = stX;
-    uint32_t tileIndex = mX/bgTileSizeW + ((y+mY)/bgTileSizeH) *32;//midmap[0];
+    uint32_t tileIndex = mX/bgTileSizeW + ((y+mY)/bgTileSizeH) *midmap[0];
     uint32_t jStart = ((y+mY) %bgTileSizeH) * bgTileSizeW; // current line in current tile
 
     uint32_t tileStart;

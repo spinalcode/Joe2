@@ -11,6 +11,10 @@ uint8_t line[255];
 const uint16_t palette2[] = {0};
 bool interlaceScreen = false;
 
+#define NOTHING 0
+#define SOLID 1
+#define JUMPTHROUGH 2
+
 struct BACKGROUND_DATA {
     int windowX; // position within the map window
     int windowY; // position within the map window
@@ -38,17 +42,18 @@ struct PLAYER_DATA {
     uint8_t gotHat = 0;
     
     int centre = 7;
-    int rightBound = 14;
-    int leftBound = 1;
+    int rightBound = 15;
+    int leftBound = 0;
     int upperBound = 1;
     int lowerBound = 15;
     bool onGround;
     bool falling;
     bool jumping;
-    bool okToJump=false;
+    bool dropping=false; // is falling through bridge?
 } player;
 
 #define GRAVITY 48
+#define MAXGRAVITY 0b1111111111111
 #define PLAYER_SPEED 512
 
 int screenX = 0;

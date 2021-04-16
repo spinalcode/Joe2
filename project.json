@@ -63935,6 +63935,45 @@
 		},
 		"\\raw\\Sav3BB3.tmp": {
 			"sdcard": false
+		},
+		"\\raw\\gems.bmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav638F.tmp": {
+			"sdcard": false
+		},
+		"\\myLevel.bin": {
+			"sdcard": true
+		},
+		"\\myLeveldata.bin": {
+			"sdcard": true
+		},
+		"\\data.bin": {
+			"sdcard": false
+		},
+		"\\level01data.bin": {
+			"sdcard": true
+		},
+		"\\mylevel.bin": {
+			"sdcard": false
+		},
+		"\\myleveldata.bin": {
+			"sdcard": false
+		},
+		"\\raw\\Image6.bmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav919F.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav9262.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavF6ED.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav5666.tmp": {
+			"sdcard": false
 		}
 	},
 	"BUILDFlags": {
