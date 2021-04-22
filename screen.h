@@ -222,3 +222,55 @@ void myBGFiller3(std::uint8_t* line, std::uint32_t y, bool skip){
 }
 
 
+
+
+
+void myTitleFiller(std::uint8_t* line, std::uint32_t y, bool skip){
+
+    uint32_t stX = 0;
+    uint32_t x = stX;
+    uint32_t tileIndex = ((y+bg.windowY)/bgTileSizeH) * 27;
+    uint32_t jStart = ((y+bg.windowY) %bgTileSizeH) * bgTileSizeW; // current line in current tile
+
+    uint32_t tileStart;
+    uint32_t lineOffset;
+    uint32_t lineStart = -stX;
+    uint32_t thisTile;
+    uint32_t tileOffset=0;
+
+    #define titleTileLine()\
+        if(x<0){lineOffset+=lineStart; x=0;}\
+        thisTile = titlemap[tileIndex++]&0x83FF;\
+        tileStart = (thisTile&32767)*tbt;\
+        lineOffset = tileStart + jStart;\
+        if(thisTile&32768){\
+            for(uint32_t b=0; b<bgTileSizeW; b++){\
+                line[x++] = titletiles[7+lineOffset--];\
+            }\
+        }else{\
+            for(uint32_t b=0; b<bgTileSizeW; b++){\
+                line[x++] = titletiles[lineOffset++];\
+            }\
+        }
+
+    #define titleHalfTileLine()\
+        if(x<0){lineOffset+=lineStart; x=0;}\
+        thisTile = titlemap[tileIndex++]&0x83FF;\
+        tileStart = (thisTile&32767)*tbt;\
+        lineOffset = tileStart + jStart;\
+        if(thisTile&32768){\
+            for(uint32_t b=0; b<4; b++){\
+                line[x++] = titletiles[7+lineOffset--];\
+            }\
+        }else{\
+            for(uint32_t b=0; b<4; b++){\
+                line[x++] = titletiles[lineOffset++];\
+            }\
+        }
+
+
+    // unrolling this loop got an extra 10fps
+    for(int t=0; t<27; t++){ titleTileLine();}
+    titleHalfTileLine(); 
+
+}
