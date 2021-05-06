@@ -39,7 +39,6 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
     // set bgcolor different for every line
     Pokitto::Display::palette[0] = hline_pal[hline[(y+(bg.mapY/4))]];
 
-
     uint32_t stX = (-bg.windowX)%bgTileSizeW;
     uint32_t x = stX;
     uint32_t tileIndex = bg.windowX/bgTileSizeW + ((y+bg.windowY)/bgTileSizeH) * bg.miniMap[0];
@@ -55,7 +54,7 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
     #define bgTileLine()\
         if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = bg.miniMap[2+tileIndex++]&0x83FF;\
-        tileStart = (thisTile&32767)*tbt;\
+        tileStart = (thisTile&1023)*tbt;\
         lineOffset = tileStart + jStart;\
         if(thisTile&32768){\
             for(uint32_t b=0; b<bgTileSizeW; b++){\
@@ -70,7 +69,7 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
     #define bgHalfTileLine()\
         if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = bg.miniMap[2+tileIndex++]&0x83FF;\
-        tileStart = (thisTile&32767)*tbt;\
+        tileStart = (thisTile&1023)*tbt;\
         lineOffset = tileStart + jStart;\
         if(thisTile&32768){\
             for(uint32_t b=0; b<4; b++){\
@@ -92,27 +91,25 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
     bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
     bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
     bgHalfTileLine(); 
+//    for(uint32_t b=216; b<220; b++){ line[b]=colourBlack; }
 
     if(clearScreen==true) memset(&line[0], 10, 220);
 
 }
-
-int mY;
-// midmap
 
 void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
 
     if(skip)return;
 
     int mX = bg.mapX/4;
-    mY = (bg.mapY-64)/4;
+    int mY = (bg.mapY-64)/4;
 
     if(mY+(int)y <=0) return;
 //    if(mY+(int)y >=176) return;
 
     uint32_t stX = (-mX)%bgTileSizeW;
     uint32_t x = stX;
-    uint32_t tileIndex = mX/bgTileSizeW + ((y+mY)/bgTileSizeH) *midmap[0];
+    uint32_t tileIndex = mX/bgTileSizeW + ((y+mY)/bgTileSizeH) * midmap[0];
     uint32_t jStart = ((y+mY) %bgTileSizeH) * bgTileSizeW; // current line in current tile
 
     uint32_t tileStart;
@@ -122,10 +119,10 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
     uint32_t thisTile;
     uint32_t tileOffset=0;
 
-    #define bgTileLineBG()\
+    #define bgTileLine2()\
         if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = midmap[2+tileIndex++];\
-        tileStart = (thisTile&32767)*tbt;\
+        tileStart = (thisTile&1023)*tbt;\
         lineOffset = tileStart + jStart;\
         if(thisTile&32768){\
             for(uint32_t b=0; b<bgTileSizeW; b++){\
@@ -145,10 +142,10 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
             }\
         }
 
-    #define bgHalfTileLineBG()\
+    #define bgHalfTileLine2()\
         if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = midmap[2+tileIndex++];\
-        tileStart = (thisTile&32767)*tbt;\
+        tileStart = (thisTile&1023)*tbt;\
         lineOffset = tileStart + jStart;\
         if(thisTile&32768){\
             for(uint32_t b=0; b<4; b++){\
@@ -169,14 +166,14 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
         }
 
     // unrolling this loop got an extra 10fps
-    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
-    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
-    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
-    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
-    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
-    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
-    bgTileLineBG(); bgTileLineBG(); bgTileLineBG(); bgTileLineBG();
-    bgHalfTileLineBG(); 
+    bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
+    bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
+    bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
+    bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
+    bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
+    bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
+    bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
+    //bgHalfTileLine2(); 
 }
 
 
@@ -222,55 +219,3 @@ void myBGFiller3(std::uint8_t* line, std::uint32_t y, bool skip){
 }
 
 
-
-
-
-void myTitleFiller(std::uint8_t* line, std::uint32_t y, bool skip){
-
-    uint32_t stX = 0;
-    uint32_t x = stX;
-    uint32_t tileIndex = ((y+bg.windowY)/bgTileSizeH) * 27;
-    uint32_t jStart = ((y+bg.windowY) %bgTileSizeH) * bgTileSizeW; // current line in current tile
-
-    uint32_t tileStart;
-    uint32_t lineOffset;
-    uint32_t lineStart = -stX;
-    uint32_t thisTile;
-    uint32_t tileOffset=0;
-
-    #define titleTileLine()\
-        if(x<0){lineOffset+=lineStart; x=0;}\
-        thisTile = titlemap[tileIndex++]&0x83FF;\
-        tileStart = (thisTile&32767)*tbt;\
-        lineOffset = tileStart + jStart;\
-        if(thisTile&32768){\
-            for(uint32_t b=0; b<bgTileSizeW; b++){\
-                line[x++] = titletiles[7+lineOffset--];\
-            }\
-        }else{\
-            for(uint32_t b=0; b<bgTileSizeW; b++){\
-                line[x++] = titletiles[lineOffset++];\
-            }\
-        }
-
-    #define titleHalfTileLine()\
-        if(x<0){lineOffset+=lineStart; x=0;}\
-        thisTile = titlemap[tileIndex++]&0x83FF;\
-        tileStart = (thisTile&32767)*tbt;\
-        lineOffset = tileStart + jStart;\
-        if(thisTile&32768){\
-            for(uint32_t b=0; b<4; b++){\
-                line[x++] = titletiles[7+lineOffset--];\
-            }\
-        }else{\
-            for(uint32_t b=0; b<4; b++){\
-                line[x++] = titletiles[lineOffset++];\
-            }\
-        }
-
-
-    // unrolling this loop got an extra 10fps
-    for(int t=0; t<27; t++){ titleTileLine();}
-    titleHalfTileLine(); 
-
-}

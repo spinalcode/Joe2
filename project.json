@@ -63974,6 +63974,168 @@
 		},
 		"\\raw\\Sav5666.tmp": {
 			"sdcard": false
+		},
+		"\\raw\\Sav198E.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\joe2sprites.pal": {
+			"sdcard": false
+		},
+		"\\raw\\bluegem.bmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav775F.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\ruby.psp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav2102.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav48C7.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav281E.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav40B5.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavFF96.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\greengem.bmp": {
+			"sdcard": false
+		},
+		"\\raw\\redgem.bmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavE814.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavC7D4.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav193D.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavF3D9.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavD1B0.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavC400.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavD650.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavD898.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav2D4E.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavE05D.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav8909.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav41A6.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav40B6.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav958E.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav4D25.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav5634.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav3B7.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\SavC074.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav4315.tmp": {
+			"sdcard": false
+		},
+		"\\raw\\font88solid.bmp": {
+			"sdcard": false
+		},
+		"\\raw\\Sav23C6.tmp": {
+			"sdcard": false
+		},
+		"\\titlescreen.bin": {
+			"sdcard": true
+		},
+		"\\titlescreen.bmp": {
+			"sdcard": false
+		},
+		"\\joe2": {
+			"sdcard": true
+		},
+		"\\joe2\\titlescreen.bin": {
+			"sdcard": true
+		},
+		"\\joe2\\level01.bin": {
+			"sdcard": true
+		},
+		"\\joe2\\level01data.bin": {
+			"sdcard": true
+		},
+		"\\joe2\\DKCJH.pcm": {
+			"sdcard": false
+		},
+		"\\joe2\\DKCJH2.pcm": {
+			"sdcard": true
+		},
+		"\\joe2\\01.bin": {
+			"sdcard": false
+		},
+		"\\joe2\\01data.bin": {
+			"sdcard": false
+		},
+		"\\joe2\\ts.bin": {
+			"sdcard": false
+		},
+		"\\01.bin": {
+			"sdcard": false
+		},
+		"\\01data.bin": {
+			"sdcard": false
+		},
+		"\\raw\\emeny1.bmp": {
+			"sdcard": false
+		},
+		"\\levelsandmaps.h": {
+			"sdcard": false
+		},
+		"\\joe2\\titlescreen.bmp": {
+			"sdcard": true
+		},
+		"\\joe2\\levelstuff.txt": {
+			"sdcard": false
+		},
+		"\\!Joe_2.bin.1.png": {
+			"sdcard": false
+		},
+		"\\!Joe_2.bin.2.png": {
+			"sdcard": false
+		},
+		"\\!Joe_2.bin.2.h": {
+			"sdcard": false
+		},
+		"\\!Joe_2.bin.1.h": {
+			"sdcard": false
 		}
 	},
 	"BUILDFlags": {
