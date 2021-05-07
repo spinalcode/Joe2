@@ -88,8 +88,8 @@ void loadLevel(int levNum){
     bg.numBlue;
     int paletteSize = 512;
 
-    sprintf(levelFilename,"0%d.bin",levNum);
-    sprintf(levelTilename,"0%ddata.bin",levNum);
+    sprintf(levelFilename,"joe2/0%d.bin",levNum);
+    sprintf(levelTilename,"joe2/0%ddata.bin",levNum);
 
     initMap();
 
@@ -155,7 +155,7 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
     
     ser.printf("\r\n\r\n\r\n");
 
-
+/*
     int x1=0;
     for(int t=0; t<1024; t++){
         printf("0x%02X,",levelData[t]);
@@ -166,7 +166,7 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
         }
         
     }
-
+*/
 
     
     uint16_t mapSize[2];
@@ -196,12 +196,8 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
             // as the collision tile is 0111110000000000, then we must >>10 &31 to get the tile number
             switch(((curTile >> 10)&31)){
                 case 2: // 3 = start position
-                    //printf("x:%d y:%d\n",x,y);
-                    //printf("x:%d y:%d\n",(x*8),(y*8));
                     player.startX = (x*8)<<8;
                     player.startY = (y*8)<<8;
-                    player.x = player.startX;
-                    player.y = player.startY;
                     player.frame=0;
                     break;
                 case 4: // 4 = red gem
@@ -233,13 +229,12 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
                     break;
                 
                 case 8: // 8 = Keith - the first enemy
-                    bg.numBlue++;
-                    items[maxItems].mapPos = t;
-                    items[maxItems].x = x*8;
-                    items[maxItems].y = y*8;
-                    items[maxItems].collected = 0;
-                    items[maxItems].type = 3; // test
-                    maxItems++;
+                    player.startX = (x*8)<<8;
+                    player.startY = (y*8)<<8;
+                    enemy[maxEnemies].x = x*8;
+                    enemy[maxEnemies].y = (y*8)+2;
+                    enemy[maxEnemies].type = 1; // 0 = dead?
+                    maxEnemies++;
                     break;
 
             }
@@ -251,6 +246,29 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
     bg.redPercent = 1.0/bg.numRed;
     bg.greenPercent = 1.0/bg.numGreen;
     bg.bluePercent = 1.0/bg.numBlue;
+
+    player.x = player.startX;
+    player.y = player.startY;
+
+
+    // update the screen before actually playing the level or else!!!
+    bg.mapX = (player.x>>8)-110;
+    bg.mapY = (player.y>>8)-88;
+    if(bg.mapX<0) bg.mapX=0;
+    if(bg.mapX>(bg.mapWidth*bgTileSizeW)-220) bg.mapX=(bg.mapWidth*bgTileSizeW)-220;
+    if(bg.mapY<0) bg.mapY=0;
+    if(bg.mapY>(bg.mapHeight*bgTileSizeH)-176) bg.mapY=(bg.mapHeight*bgTileSizeH)-176;
+    oldScreenX = screenX;
+    oldScreenY = screenY;
+    screenX = bg.mapX/224;
+    screenY = bg.mapY/176;
+    int mapPosX = screenX * 224;
+    int mapPosY = screenY * 176;
+    updateMap( mapPosX/8 , mapPosY/8);
+    bg.windowX = bg.mapX%224;
+	bg.windowY = bg.mapY%176;
+
+
 
     //printf("px:%d py:%d\n",player.startX>>8,player.startY>>8);
     //printf("px:%d py:%d\n",player.x>>8,player.y>>8);

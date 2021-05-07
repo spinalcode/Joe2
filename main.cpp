@@ -13,10 +13,10 @@ Serial ser(EXT7, EXT6);
 #include "buttonhandling.h"
 #include <LibAudio>
 
-#include "levelsandmaps.h"
 
 #include "background.h"
 #include "screen.h"
+#include "levelsandmaps.h"
 
 
 
@@ -74,6 +74,7 @@ int rightCollision(int x, int y){
 
 
 void gameLogic(){
+
 
     bool falling=false;
     bool jumping=false;
@@ -278,6 +279,43 @@ void gameLogic(){
         } // collected
     }
 
+
+
+
+    //enemies
+    for(int t=0; t<maxEnemies; t++){
+        if(enemy[t].type != 0){
+
+            //enemy[t].frame++;
+            //if(enemy[t].frame >= sizeof(gemFrame)*items[t].speed){items[t].frame=0;}
+            int theX = enemy[t].x-bg.mapX;
+            int theY = enemy[t].y-bg.mapY;
+            if(theX>-16 && theX<220 && theY>-16 && theY<176){
+
+                if(enemy[t].direction==0){
+                    if(checkCollision(enemy[t].x+15, enemy[t].y+15) == SOLID){
+                        enemy[t].direction=1;
+                    }else{
+                        enemy[t].x++;
+                    }
+                }
+                if(enemy[t].direction==1){
+                    if(checkCollision(enemy[t].x-1, enemy[t].y+15) == SOLID){
+                        enemy[t].direction=0;
+                    }else{
+                        enemy[t].x--;
+                    }
+                }
+            
+            
+                int flipme=0;
+                Pokitto::Display::drawSprite(theX, theY, enemy1[0],flipme);
+            }
+
+        } // not dead
+    }
+
+
 /*
     Pokitto::Display::drawSprite(0, 32, color_sprite[sprite_anim_frame/2],0,0,240);
     if(++sprite_anim_frame==16)sprite_anim_frame=0;
@@ -439,7 +477,7 @@ int main(){
         sprintf(tempText,"StartX:%d, startY:%d", player.startX>>8, player.startY>>8);
         myPrint(0,16,tempText);
 
-        sprintf(tempText,"Collsision:%d",checkCollision(player.x>>8, player.y>>8));
+        sprintf(tempText,"Collsision:%d",checkCollision(enemy[0].x, enemy[0].y));
         myPrint(0,24,tempText);
 
         sprintf(tempText,"W:%d, H:%d", midmap[0], midmap[1]);

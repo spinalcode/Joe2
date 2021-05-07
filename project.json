@@ -64136,6 +64136,12 @@
 		},
 		"\\!Joe_2.bin.1.h": {
 			"sdcard": false
+		},
+		"\\joe2\\SavB110.tmp": {
+			"sdcard": false
+		},
+		"\\joe2\\SavC631.tmp": {
+			"sdcard": false
 		}
 	},
 	"BUILDFlags": {

@@ -91,23 +91,19 @@ struct ENEMY_DATA {
     int vy; // for jumping
     bool flip; // flip sprite
 
-    int startX;
-    int startY;
-
     uint8_t frame; // tile number
     uint8_t direction;
     uint8_t step;
+
+    uint8_t type=0;
 
     int centre = 7;
     int rightBound = 15;
     int leftBound = 0;
     int upperBound = 1;
     int lowerBound = 15;
-    bool onGround;
-    bool falling;
-    bool jumping;
-} enemy;
-
+} enemy[100];
+int maxEnemies=0;
 
 #define GRAVITY 48
 #define MAXGRAVITY 0b1111111111111
