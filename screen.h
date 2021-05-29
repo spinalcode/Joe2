@@ -37,7 +37,8 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
     if(skip)return;
 
     // set bgcolor different for every line
-    Pokitto::Display::palette[0] = hline_pal[hline[(y+(bg.mapY/4))]];
+    //Pokitto::Display::palette[0] = hline_pal[hline[(y+(bg.mapY/4))]];
+    Pokitto::Display::palette[0] = bgline_pal[hline[y]];
 
     uint32_t stX = (-bg.windowX)%bgTileSizeW;
     uint32_t x = stX;
@@ -50,20 +51,37 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
 //    uint32_t isFlipped = 0;         /* isFlipped = thisTile>>15 */
     uint32_t thisTile;
     uint32_t tileOffset=0;
+    uint32_t b=bgTileSizeW;
+    auto lineP = &line[0];
 
     #define bgTileLine()\
         if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = bg.miniMap[2+tileIndex++]&0x83FF;\
         tileStart = (thisTile&1023)*tbt;\
         lineOffset = tileStart + jStart;\
+        b=bgTileSizeW;\
+        lineP = &line[x];\
+        x+=8;\
         if(thisTile&32768){\
-            for(uint32_t b=0; b<bgTileSizeW; b++){\
-                line[x++] = tiles[7+lineOffset--];\
-            }\
+            auto tilesP = &tiles[7 + lineOffset];\
+                *lineP++ = *tilesP--;\
+                *lineP++ = *tilesP--;\
+                *lineP++ = *tilesP--;\
+                *lineP++ = *tilesP--;\
+                *lineP++ = *tilesP--;\
+                *lineP++ = *tilesP--;\
+                *lineP++ = *tilesP--;\
+                *lineP++ = *tilesP--;\
         }else{\
-            for(uint32_t b=0; b<bgTileSizeW; b++){\
-                line[x++] = tiles[lineOffset++];\
-            }\
+            auto tilesP = &tiles[lineOffset];\
+                *lineP++ = *tilesP++;\
+                *lineP++ = *tilesP++;\
+                *lineP++ = *tilesP++;\
+                *lineP++ = *tilesP++;\
+                *lineP++ = *tilesP++;\
+                *lineP++ = *tilesP++;\
+                *lineP++ = *tilesP++;\
+                *lineP++ = *tilesP++;\
         }
 
     #define bgHalfTileLine()\
@@ -71,14 +89,20 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
         thisTile = bg.miniMap[2+tileIndex++]&0x83FF;\
         tileStart = (thisTile&1023)*tbt;\
         lineOffset = tileStart + jStart;\
+        b=bgTileSizeW;\
+        lineP = &line[x];\
         if(thisTile&32768){\
-            for(uint32_t b=0; b<4; b++){\
-                line[x++] = tiles[7+lineOffset--];\
-            }\
+            auto tilesP = &tiles[7 + lineOffset];\
+                *lineP++ = *tilesP--;\
+                *lineP++ = *tilesP--;\
+                *lineP++ = *tilesP--;\
+                *lineP++ = *tilesP--;\
         }else{\
-            for(uint32_t b=0; b<4; b++){\
-                line[x++] = tiles[lineOffset++];\
-            }\
+            auto tilesP = &tiles[lineOffset];\
+                *lineP++ = *tilesP++;\
+                *lineP++ = *tilesP++;\
+                *lineP++ = *tilesP++;\
+                *lineP++ = *tilesP++;\
         }
 
 
@@ -118,51 +142,80 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
     uint32_t isFlipped = 0;
     uint32_t thisTile;
     uint32_t tileOffset=0;
+    uint32_t b=bgTileSizeW;
+    auto lineP = &line[0];
 
     #define bgTileLine2()\
         if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = midmap[2+tileIndex++];\
         tileStart = (thisTile&1023)*tbt;\
         lineOffset = tileStart + jStart;\
+        lineP = &line[x];\
         if(thisTile&32768){\
-            for(uint32_t b=0; b<bgTileSizeW; b++){\
-                if(line[x]==0){\
-                    line[x++] = tiles[7+lineOffset--];\
-                }else{\
-                    x++; lineOffset--;\
-                }\
-            }\
+            auto tilesP = &tiles[7 + lineOffset];\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
         }else{\
-            for(uint32_t b=0; b<bgTileSizeW; b++){\
-                if(line[x]==0){\
-                    line[x++] = tiles[lineOffset++];\
-                }else{\
-                    x++; lineOffset++;\
-                }\
-            }\
+            auto tilesP = &tiles[lineOffset];\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
         }
+
 
     #define bgHalfTileLine2()\
         if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = midmap[2+tileIndex++];\
         tileStart = (thisTile&1023)*tbt;\
         lineOffset = tileStart + jStart;\
+        lineP = &line[x];\
         if(thisTile&32768){\
-            for(uint32_t b=0; b<4; b++){\
-                if(line[x]==0){\
-                    line[x++] = tiles[7+lineOffset--];\
-                }else{\
-                    x++; lineOffset--;\
-                }\
-            }\
+            auto tilesP = &tiles[7 + lineOffset];\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP--;\
         }else{\
-            for(uint32_t b=0; b<4; b++){\
-                if(line[x]==0){\
-                    line[x++] = tiles[lineOffset++];\
-                }else{\
-                    x++; lineOffset++;\
-                }\
-            }\
+            auto tilesP = &tiles[lineOffset];\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
+                if(*lineP==0) *lineP = *tilesP;\
+                x++; *lineP++; *tilesP++;\
         }
 
     // unrolling this loop got an extra 10fps
@@ -173,7 +226,10 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
     bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
     bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
     bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
-    //bgHalfTileLine2(); 
+    bgHalfTileLine2(); 
+
+    if(clearScreen==true) memset(&line[0], 10, 220);
+
 }
 
 
@@ -217,5 +273,4 @@ void myBGFiller3(std::uint8_t* line, std::uint32_t y, bool skip){
     bgColLine(); bgColLine(); bgColLine(); bgColLine();
     bgColLine(); bgColLine(); bgColLine(); bgColLine();
 }
-
 

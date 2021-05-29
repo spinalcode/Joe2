@@ -1,7 +1,7 @@
 bool clearScreen=false;
 long int myDelay;
 long int tempTime;
-long int frameCount;
+int frameSkip;
 int fpsCount=0;
 long int fpsCounter;
 long int lastMillis;
@@ -14,13 +14,16 @@ bool mustDraw=true;
 
 uint8_t colourBlack=7;
 
-#define NOTHING 0
-#define SOLID 1
-#define JUMPTHROUGH 18
+uint16_t bgline_pal[92];
 
 char levelFilename[32];
 char levelTilename[32];
 uint32_t layerNumber=0;
+
+uint8_t tileType[20]; // to be read from the first row in the collision map
+#define NOTHING 0
+int SOLID = 1;
+int JUMPTHROUGH = 3;
 
 struct BACKGROUND_DATA {
     int windowX; // position within the map window
@@ -74,16 +77,14 @@ struct PLAYER_DATA {
 struct COLLECTABLES_DATA {
     int x;
     int y;
-    int type;
-    int frame;
-    int numFrames = 19;
-    int halfFrames = 10;
-    int speed = 2;
-    int collected;
+    uint8_t type;
+    uint8_t frame;
+    uint8_t speed = 5;
+    uint8_t collected;
     int mapPos;
 } items[100];
 int maxItems=0;
-const uint8_t gemFrame[]={0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
+const uint8_t gemFrame[]={0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7};
 
 struct ENEMY_DATA {
     int x;  // x postition
@@ -96,6 +97,7 @@ struct ENEMY_DATA {
     uint8_t step;
 
     uint8_t type=0;
+    uint8_t speed=6;
 
     int centre = 7;
     int rightBound = 15;
@@ -105,7 +107,7 @@ struct ENEMY_DATA {
 } enemy[100];
 int maxEnemies=0;
 
-#define GRAVITY 48
+#define GRAVITY 56
 #define MAXGRAVITY 0b1111111111111
 #define PLAYER_SPEED 512
 

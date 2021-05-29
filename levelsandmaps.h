@@ -38,13 +38,52 @@ void reSaturate(double changeRed, double changeGreen, double changeBlue){
     
         gamePalette.rgb[t] = (R5<<11)|(G6<<5)|B5;
     }
-    
+
     // sprite palette
     for(int t=0; t<16; t++){ // colour palette for sprites
         gamePalette.rgb[t+240] = color_sprite_pal[t];
     }
     
     Pokitto::Display::load565Palette(gamePalette.rgb);
+
+    // hline_pal[]
+    // Background scanline palette
+    for(int t=0; t<sizeof(hline_pal)/2; t++){ // leave the last 16 colours alone
+        gamePalette.rgb[t] = hline_pal[t];
+        
+        uint8_t r[256];
+        uint8_t g[256];
+        uint8_t b[256];
+        
+        r[t] = (gamePalette.rgb[t] & 0xF800) >> 11;
+        g[t] = (gamePalette.rgb[t] & 0x7E0) >> 5;
+        b[t] = (gamePalette.rgb[t] & 0x1F);
+        //float grey = (0.2126 * gamePalette.r[t]) + (0.7152 * gamePalette.g[t] /2) + (0.0722 * gamePalette.b[t]);
+            
+        // convert 656 to 888 for easier maths
+        double R8 = ( r[t] * 527 + 23 ) >> 6;
+        double G8 = ( g[t] * 259 + 33 ) >> 6;
+        double B8 = ( b[t] * 527 + 23 ) >> 6;
+    
+        //  public-domain function by Darel Rex Finley
+        double  P=sqrt(
+          (R8)*(R8)*Pr+
+          (G8)*(G8)*Pg+
+          (B8)*(B8)*Pb ) ;
+            
+        R8=P+((R8)-P)*changeRed;
+        G8=P+((G8)-P)*changeGreen;
+        B8=P+((B8)-P)*changeBlue;
+    
+        // convert 888 to 565 for reloading
+        uint8_t R5 = (( (int)R8 * 249 + 1014 ) >> 11)&31;
+        uint8_t G6 = (( (int)G8 * 253 +  505 ) >> 10)&63;
+        uint8_t B5 = (( (int)B8 * 249 + 1014 ) >> 11)&31;
+    
+        bgline_pal[t] = (R5<<11)|(G6<<5)|B5;
+    }
+    
+    
 }
 
 
@@ -83,6 +122,8 @@ void initMap(){
 
 void loadLevel(int levNum){
 
+    srand(Pokitto::Core::getTime());
+
     bg.numRed = 0;
     bg.numGreen;
     bg.numBlue;
@@ -92,35 +133,6 @@ void loadLevel(int levNum){
     sprintf(levelTilename,"joe2/0%ddata.bin",levNum);
 
     initMap();
-
-
-/*
-
-/joe2/01data.bin
-512 bytes = palette
-2 bytes = map length (x1)
-2 bytes = map width
-2 bytes = map height
-x1 * 2 bytes = 16bit map data
-
-2 bytes = length of tile data (x2)
-x2 bytes = 8bit background tiles
-
-2 bytes = length of collision tile data (x3)
-x3 bytes 8bit collision tiles
-
-
-// pointers to our data
-const uint8_t* levelData = nullptr;
-const uint16_t* midmap = nullptr;
-const uint8_t* tiles = nullptr;
-const uint8_t* collisionTile = nullptr;
-
-// Make a hotswap area for level data
-// size = 72*1024k, unique id = 0
-using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level tiles
-
-*/
 
     // hotswap the level data    
     levelData = LevelData::load(levelTilename); 
@@ -145,7 +157,6 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
     ser.printf("levelData.....0x%08X\r\n",levelData);
     ser.printf("scenerySize...0x%08X\r\n",scenerySize);
     ser.printf("tilesOffset...0x%08X\r\n",tilesOffset);
-    ser.printf("levelData.....0x%08X\r\n",levelData);
     ser.printf("midmap........0x%08X\r\n",midmap);
     ser.printf("tiles.........0x%08X\r\n",tiles);
     ser.printf("collisionTile.0x%08X\r\n",collisionTile);
@@ -158,7 +169,7 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
 /*
     int x1=0;
     for(int t=0; t<1024; t++){
-        printf("0x%02X,",levelData[t]);
+        printf("0x%02d,",(levelData[t]>> 10)&31);
         x1++;
         if(x1==16){
             x1=0;
@@ -177,13 +188,13 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
     // check collision map for collectable tilesOffset
     mapWidth = mapSize[0];
     mapHeight = mapSize[1];
-    numGems = 0;
 
     player.x = 0;
     player.y = 0;
     numGems = 0;
-    
     maxItems=0;
+    maxEnemies=0;
+    
     int x=0;
     int y=0;
     for(int t=0; t<(mapWidth*mapHeight); t++){
@@ -192,56 +203,93 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
         x++;
         if(x==mapWidth){x=0; y++;}
 
+        if(x<20 && y==0){
+            tileType[t]=((curTile >> 10)&31);
+        }
+
+
         if(y>=2){ // skip first line as it has control blocks for numbering
             // as the collision tile is 0111110000000000, then we must >>10 &31 to get the tile number
-            switch(((curTile >> 10)&31)){
-                case 2: // 3 = start position
+            int tl = ((curTile >> 10)&31);
+            if(tl == tileType[2]){ // 3 = start position
                     player.startX = (x*8)<<8;
                     player.startY = (y*8)<<8;
                     player.frame=0;
-                    break;
-                case 4: // 4 = red gem
+            }
+            if(tl == tileType[4]){ // 4 = red gem
                     bg.numRed++;
                     items[maxItems].mapPos = t-2;
                     items[maxItems].x = x*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
+                    items[maxItems].frame = random(sizeof(gemFrame)*items[maxItems].speed);
                     items[maxItems].type = ((curTile >> 10)&31)-3; // gem
                     maxItems++;
-                    break;
-                case 5: // 5 = green gem
+            }
+            if(tl == tileType[5]){ // 5 = green gem
                     bg.numGreen++;
                     items[maxItems].mapPos = t-2;
                     items[maxItems].x = x*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
+                    items[maxItems].frame = random(sizeof(gemFrame)*items[maxItems].speed);
                     items[maxItems].type = ((curTile >> 10)&31)-3; // gem
                     maxItems++;
-                    break;
-                case 6: // 6 = blue gem
+            }
+            if(tl == tileType[6]){ // 6 = blue gem
                     bg.numBlue++;
                     items[maxItems].mapPos = t;
                     items[maxItems].x = x*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
+                    items[maxItems].frame = random(sizeof(gemFrame)*items[maxItems].speed);
                     items[maxItems].type = ((curTile >> 10)&31)-3; // gem
                     maxItems++;
-                    break;
-                
-                case 8: // 8 = Keith - the first enemy
+            }
+            if(tl == tileType[7]){ // 8 = Keith - the first enemy
                     player.startX = (x*8)<<8;
                     player.startY = (y*8)<<8;
                     enemy[maxEnemies].x = x*8;
                     enemy[maxEnemies].y = (y*8)+2;
                     enemy[maxEnemies].type = 1; // 0 = dead?
                     maxEnemies++;
-                    break;
-
             }
+            if(tl == tileType[8]){ // 8 = Keith - the first enemy
+                    player.startX = (x*8)<<8;
+                    player.startY = (y*8)<<8;
+                    enemy[maxEnemies].x = x*8;
+                    enemy[maxEnemies].y = (y*8)+2;
+                    enemy[maxEnemies].type = 1; // 0 = dead?
+                    maxEnemies++;
+            }
+            if(tl == tileType[9]){ // 8 = Keith - the first enemy
+                    player.startX = (x*8)<<8;
+                    player.startY = (y*8)<<8;
+                    enemy[maxEnemies].x = x*8;
+                    enemy[maxEnemies].y = (y*8)+2;
+                    enemy[maxEnemies].type = 1; // 0 = dead?
+                    maxEnemies++;
+            }
+            if(tl == tileType[10]){ // 8 = Keith - the first enemy
+                    player.startX = (x*8)<<8;
+                    player.startY = (y*8)<<8;
+                    enemy[maxEnemies].x = x*8;
+                    enemy[maxEnemies].y = (y*8)+2;
+                    enemy[maxEnemies].type = 1; // 0 = dead?
+                    maxEnemies++;
+            }
+            
         }// y>0
     }
     levfile.close();
     //waitButton();
+    
+    ser.printf("maxEnemies %d\r\n",maxEnemies);
+    ser.printf("maxItems %d\r\n",maxItems);
+
+    ser.printf("\r\n\r\n\r\n");
+    
+    
     
     bg.redPercent = 1.0/bg.numRed;
     bg.greenPercent = 1.0/bg.numGreen;
@@ -268,6 +316,7 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
     bg.windowX = bg.mapX%224;
 	bg.windowY = bg.mapY%176;
 
+    SOLID = collisionTile[tileType[1]*64]; // ?
 
 
     //printf("px:%d py:%d\n",player.startX>>8,player.startY>>8);

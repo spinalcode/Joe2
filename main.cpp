@@ -4,7 +4,6 @@
 
 Serial ser(EXT7, EXT6);
 
-
 #include "globals.h"
 //#include "sound.h"
 #include "sprites.h"
@@ -13,20 +12,15 @@ Serial ser(EXT7, EXT6);
 #include "buttonhandling.h"
 #include <LibAudio>
 
-
 #include "background.h"
 #include "screen.h"
 #include "levelsandmaps.h"
-
-
 
 
 void waitButton(){
     updateButtons();
     while(!_A_But[NEW]) updateButtons();
 }
-
-
 
 // print text
 void myPrint(char x, char y, const char* text) {
@@ -75,7 +69,6 @@ int rightCollision(int x, int y){
 
 void gameLogic(){
 
-
     bool falling=false;
     bool jumping=false;
 
@@ -98,7 +91,7 @@ void gameLogic(){
             player.x -= 128;
         }
         player.x += PLAYER_SPEED;
-        player.step ++;
+        if(frameSkip==0){player.step ++;}
     }
 
     if(_Left_But[HELD]){
@@ -106,10 +99,10 @@ void gameLogic(){
             player.x += 128;
         }
         player.x -= PLAYER_SPEED;
-        player.step ++;
+        if(frameSkip==0){player.step ++;}
     }
 
-    if (player.step >= 3) {
+    if (player.step >= 2) {
         player.frame++;
         player.step = 0;
     }
@@ -212,24 +205,30 @@ void gameLogic(){
     }
     if(player.vy <0){
         player.hatFrame = 7;
-        player.hatX *=5;
-        player.hatY = 3;
+        player.hatX *=6;
+        player.hatY = 2;
     }
 
-    if(player.vy>-150 && player.vy<150){
+    if(player.vy>-200 && player.vy<200){
         if(player.jumping){
             player.frame=0;
-            player.hatX = 1;
+            player.hatX = 4;
             player.hatY = 5;
-            player.hatFrame = 6;
+            player.hatFrame = 8;
+            if(player.flip==1){
+                player.hatX *= -1;
+            }
         }
     }
 
 
-    // player sprite    
-    Pokitto::Display::drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[player.frame], 0, player.flip);
-    Pokitto::Display::drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], 0, player.flip);
-
+    // player sprite
+    if(frameSkip==0){
+        Pokitto::Display::drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[player.frame], 0, player.flip);
+        Pokitto::Display::drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], 0, player.flip);
+    }
+    
+    if((player.y>>8)-bg.mapY>220){gameMode = 0;}
 
     //items
     for(int t=0; t<maxItems; t++){
@@ -248,7 +247,9 @@ void gameLogic(){
                 int theY = items[t].y-bg.mapY;
                 
                 if(theX>-16 && theX<220 && theY>-16 && theY<176){
-                    Pokitto::Display::drawSprite(theX, theY, gems[ (items[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
+                    if(frameSkip==0){
+                        Pokitto::Display::drawSprite(theX, theY, gems[ (items[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
+                    }
                     //char tempText[10];
                     //sprintf(tempText,"%d",items[t].mapPos);
                     //myPrint(theX, theY,tempText);
@@ -286,21 +287,22 @@ void gameLogic(){
     for(int t=0; t<maxEnemies; t++){
         if(enemy[t].type != 0){
 
-            //enemy[t].frame++;
-            //if(enemy[t].frame >= sizeof(gemFrame)*items[t].speed){items[t].frame=0;}
+            if(++enemy[t].frame >= 4*enemy[t].speed){enemy[t].frame=0;}
             int theX = enemy[t].x-bg.mapX;
             int theY = enemy[t].y-bg.mapY;
             if(theX>-16 && theX<220 && theY>-16 && theY<176){
 
                 if(enemy[t].direction==0){
-                    if(checkCollision(enemy[t].x+15, enemy[t].y+15) == SOLID){
+                    if(checkCollision(enemy[t].x+15, enemy[t].y+15) == SOLID ||
+                        checkCollision(enemy[t].x+15, enemy[t].y+16) != SOLID ){
                         enemy[t].direction=1;
                     }else{
                         enemy[t].x++;
                     }
                 }
                 if(enemy[t].direction==1){
-                    if(checkCollision(enemy[t].x-1, enemy[t].y+15) == SOLID){
+                    if(checkCollision(enemy[t].x-1, enemy[t].y+15) == SOLID || 
+                        checkCollision(enemy[t].x-1, enemy[t].y+16) != SOLID ){
                         enemy[t].direction=0;
                     }else{
                         enemy[t].x--;
@@ -308,8 +310,10 @@ void gameLogic(){
                 }
             
             
-                int flipme=0;
-                Pokitto::Display::drawSprite(theX, theY, enemy1[0],flipme);
+                if(frameSkip==0){
+                    int flipme=0;
+                    Pokitto::Display::drawSprite(theX, theY, enemy1[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                }
             }
 
         } // not dead
@@ -361,23 +365,24 @@ void titleScreen(){
     }
 
     if(_A_But[NEW]){
+        
         reSaturate(0,0,0);
         gameMode=1;
     
-        Pokitto::Display::setTASRowMask(0b1111'11111111'11111111);
-        clearScreen=true; Pokitto::Core::update(); Pokitto::Core::update(); clearScreen=false;
-        // a little 'wide-screening' to remove 16 lines for higher frame rate
-        Pokitto::Display::setTASRowMask(0b1111'11111111'11111111);
-
         loadLevel(1);
     
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
-        Pokitto::Display::lineFillers[2] = Pokitto::Display::lineFillers[1]; // sprite layer
+        //Pokitto::Display::lineFillers[2] = Pokitto::Display::lineFillers[1]; // sprite layer
         Pokitto::Display::lineFillers[1] = myBGFiller2; // background map layer
+
+        Pokitto::Display::setTASRowMask(0b1111'11111111'11111111);
+        clearScreen=true; Pokitto::Core::update(); Pokitto::Core::update(); clearScreen=false;
+        // a little 'wide-screening' to remove 16 lines for higher frame rate
+        Pokitto::Display::setTASRowMask(0b0111'11111111'11111110);
 
         printf("px:%d py:%d\n",player.startX>>8,player.startY>>8);
         printf("px:%d py:%d\n",player.x>>8,player.y>>8);
-        
+        mustDraw=true;
     }
 
 }
@@ -390,14 +395,11 @@ int main(){
 
     PC::begin();
 
-    //PC::setFrameRate(5);
+    //PC::setFrameRate(10);
 
     PD::invisiblecolor = 0;
     PD::adjustCharStep = 0;
     PD::adjustLineStep = 0;
-
-    frameCount=0;
-
 
     // line filler test
     // 0 = tile layer
@@ -410,9 +412,13 @@ int main(){
     //PD::lineFillers[3] = wiggleFill; // collision layer
     //PD::lineFillers[3] = myBGFiller3; // collision layer
     
-    reSaturate(1,1,1);
+    //reSaturate(1,1,1);
 
-    auto music = Audio::play("/joe2/dkcjh2.pcm"); // streams are on channel 0 by default
+    // This can only be done once, as were swapping layers around
+    Pokitto::Display::lineFillers[2] = Pokitto::Display::lineFillers[1]; // sprite layer
+
+
+    auto music = Audio::play("/joe2/C_8000.pcm"); // streams are on channel 0 by default
     if(music) music->setLoop(true);
 
 
@@ -426,16 +432,16 @@ int main(){
     ser.baud(115200);
     printf("Joe2\r\n");
 
-
+    frameSkip=0;
     while( PC::isRunning() ){
-/*        
-        if(frameCount==1){
-            PC::update();
-            frameCount=0;
+        
+
+        if(frameSkip==0){
+            if( !PC::update() ) continue;
+        }else{
+            PC::update(0); // don't update screen.
         }
-        frameCount++;
-*/
-        if( !PC::update() ) continue;
+        frameSkip = 1-frameSkip;
 
         switch(gameMode){
             
@@ -470,18 +476,18 @@ int main(){
 
         //Pokitto::Display::drawSprite(220-32, 0, palette_sprite);
 
-        char tempText[10];
+        char tempText[100];
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,8,tempText);
 
-        sprintf(tempText,"StartX:%d, startY:%d", player.startX>>8, player.startY>>8);
+        sprintf(tempText,"vx:%d", player.vy);
         myPrint(0,16,tempText);
 
-        sprintf(tempText,"Collsision:%d",checkCollision(enemy[0].x, enemy[0].y));
+        sprintf(tempText,"Collsision:%d",checkCollision(player.x>>8, player.y>>8));
         myPrint(0,24,tempText);
 
-        sprintf(tempText,"W:%d, H:%d", midmap[0], midmap[1]);
-        myPrint(0,32,tempText);
+        //sprintf(tempText,"frameSkip:%d", frameSkip);
+        //myPrint(0,32,tempText);
 
 
         if(PC::getTime() >= lastMillis+1000){
