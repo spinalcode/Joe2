@@ -122,6 +122,10 @@ void initMap(){
 
 void loadLevel(int levNum){
 
+    bg.satRed=0;
+    bg.satGreen=0;
+    bg.satBlue=0;
+
     srand(Pokitto::Core::getTime());
 
     bg.numRed = 0;
@@ -152,7 +156,7 @@ void loadLevel(int levNum){
     for(int t=0; t<16; t++){
         Pokitto::Display::palette[t+240] = color_sprite_pal[t];
     }
-
+/*
     ser.printf("\r\n\r\n\r\n");
     ser.printf("levelData.....0x%08X\r\n",levelData);
     ser.printf("scenerySize...0x%08X\r\n",scenerySize);
@@ -165,7 +169,7 @@ void loadLevel(int levNum){
     ser.printf("midMap Height %d\r\n",midmap[1]);
     
     ser.printf("\r\n\r\n\r\n");
-
+*/
 /*
     int x1=0;
     for(int t=0; t<1024; t++){
@@ -219,7 +223,7 @@ void loadLevel(int levNum){
             if(tl == tileType[4]){ // 4 = red gem
                     bg.numRed++;
                     items[maxItems].mapPos = t-2;
-                    items[maxItems].x = x*8;
+                    items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
                     items[maxItems].frame = random(sizeof(gemFrame)*items[maxItems].speed);
@@ -229,7 +233,7 @@ void loadLevel(int levNum){
             if(tl == tileType[5]){ // 5 = green gem
                     bg.numGreen++;
                     items[maxItems].mapPos = t-2;
-                    items[maxItems].x = x*8;
+                    items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
                     items[maxItems].frame = random(sizeof(gemFrame)*items[maxItems].speed);
@@ -239,7 +243,7 @@ void loadLevel(int levNum){
             if(tl == tileType[6]){ // 6 = blue gem
                     bg.numBlue++;
                     items[maxItems].mapPos = t;
-                    items[maxItems].x = x*8;
+                    items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
                     items[maxItems].frame = random(sizeof(gemFrame)*items[maxItems].speed);
@@ -249,7 +253,7 @@ void loadLevel(int levNum){
             if(tl == tileType[7]){ // 8 = Keith - the first enemy
                     player.startX = (x*8)<<8;
                     player.startY = (y*8)<<8;
-                    enemy[maxEnemies].x = x*8;
+                    enemy[maxEnemies].x = (x-1)*8;
                     enemy[maxEnemies].y = (y*8)+2;
                     enemy[maxEnemies].type = 1; // 0 = dead?
                     maxEnemies++;
@@ -257,7 +261,7 @@ void loadLevel(int levNum){
             if(tl == tileType[8]){ // 8 = Keith - the first enemy
                     player.startX = (x*8)<<8;
                     player.startY = (y*8)<<8;
-                    enemy[maxEnemies].x = x*8;
+                    enemy[maxEnemies].x = (x-1)*8;
                     enemy[maxEnemies].y = (y*8)+2;
                     enemy[maxEnemies].type = 1; // 0 = dead?
                     maxEnemies++;
@@ -265,7 +269,7 @@ void loadLevel(int levNum){
             if(tl == tileType[9]){ // 8 = Keith - the first enemy
                     player.startX = (x*8)<<8;
                     player.startY = (y*8)<<8;
-                    enemy[maxEnemies].x = x*8;
+                    enemy[maxEnemies].x = (x-1)*8;
                     enemy[maxEnemies].y = (y*8)+2;
                     enemy[maxEnemies].type = 1; // 0 = dead?
                     maxEnemies++;
@@ -273,7 +277,7 @@ void loadLevel(int levNum){
             if(tl == tileType[10]){ // 8 = Keith - the first enemy
                     player.startX = (x*8)<<8;
                     player.startY = (y*8)<<8;
-                    enemy[maxEnemies].x = x*8;
+                    enemy[maxEnemies].x = (x-1)*8;
                     enemy[maxEnemies].y = (y*8)+2;
                     enemy[maxEnemies].type = 1; // 0 = dead?
                     maxEnemies++;
@@ -294,6 +298,9 @@ void loadLevel(int levNum){
     bg.redPercent = 1.0/bg.numRed;
     bg.greenPercent = 1.0/bg.numGreen;
     bg.bluePercent = 1.0/bg.numBlue;
+    bg.countRed=0;
+    bg.countGreen=0;
+    bg.countBlue=0;
 
     player.x = player.startX;
     player.y = player.startY;
@@ -317,6 +324,10 @@ void loadLevel(int levNum){
 	bg.windowY = bg.mapY%176;
 
     SOLID = collisionTile[tileType[1]*64]; // ?
+
+
+    bg.oldMapX = player.x-28160;
+    bg.oldMapY = player.y-22528;
 
 
     //printf("px:%d py:%d\n",player.startX>>8,player.startY>>8);

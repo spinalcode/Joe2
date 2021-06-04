@@ -64,24 +64,24 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
         x+=8;\
         if(thisTile&32768){\
             auto tilesP = &tiles[7 + lineOffset];\
-                *lineP++ = *tilesP--;\
-                *lineP++ = *tilesP--;\
-                *lineP++ = *tilesP--;\
-                *lineP++ = *tilesP--;\
-                *lineP++ = *tilesP--;\
-                *lineP++ = *tilesP--;\
-                *lineP++ = *tilesP--;\
-                *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
         }else{\
             auto tilesP = &tiles[lineOffset];\
-                *lineP++ = *tilesP++;\
-                *lineP++ = *tilesP++;\
-                *lineP++ = *tilesP++;\
-                *lineP++ = *tilesP++;\
-                *lineP++ = *tilesP++;\
-                *lineP++ = *tilesP++;\
-                *lineP++ = *tilesP++;\
-                *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
         }
 
     #define bgHalfTileLine()\
@@ -93,16 +93,16 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
         lineP = &line[x];\
         if(thisTile&32768){\
             auto tilesP = &tiles[7 + lineOffset];\
-                *lineP++ = *tilesP--;\
-                *lineP++ = *tilesP--;\
-                *lineP++ = *tilesP--;\
-                *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
+            *lineP++ = *tilesP--;\
         }else{\
             auto tilesP = &tiles[lineOffset];\
-                *lineP++ = *tilesP++;\
-                *lineP++ = *tilesP++;\
-                *lineP++ = *tilesP++;\
-                *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
+            *lineP++ = *tilesP++;\
         }
 
 
@@ -153,40 +153,40 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
         lineP = &line[x];\
         if(thisTile&32768){\
             auto tilesP = &tiles[7 + lineOffset];\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
         }else{\
             auto tilesP = &tiles[lineOffset];\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
         }
 
 
@@ -198,24 +198,24 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
         lineP = &line[x];\
         if(thisTile&32768){\
             auto tilesP = &tiles[7 + lineOffset];\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP--;\
         }else{\
             auto tilesP = &tiles[lineOffset];\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
-                if(*lineP==0) *lineP = *tilesP;\
-                x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
+            if(*lineP==0) *lineP = *tilesP;\
+            x++; *lineP++; *tilesP++;\
         }
 
     // unrolling this loop got an extra 10fps

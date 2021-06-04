@@ -1,3 +1,6 @@
+
+//File bgmFile;
+
 bool clearScreen=false;
 long int myDelay;
 long int tempTime;
@@ -16,6 +19,12 @@ uint8_t colourBlack=7;
 
 uint16_t bgline_pal[92];
 
+int lastCollectedX=0;
+int lastCollectedY=0;
+
+const uint16_t emptyPalette[]={0};
+const uint8_t blankLine[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
 char levelFilename[32];
 char levelTilename[32];
 uint32_t layerNumber=0;
@@ -30,6 +39,8 @@ struct BACKGROUND_DATA {
     int windowY; // position within the map window
     int mapX; // scroll amount of main map
     int mapY; // scroll amount of main map
+    int oldMapX; // scroll amount of main map
+    int oldMapY; // scroll amount of main map
     int mapWidth; // width of map
     int mapHeight; // height of map
     uint16_t miniMap[2+56*44]; // the window on the whole map
@@ -40,6 +51,9 @@ struct BACKGROUND_DATA {
     int numRed;
     int numGreen;
     int numBlue;
+    int countRed;
+    int countGreen;
+    int countBlue;
     float redPercent;
     float greenPercent;
     float bluePercent;
@@ -79,7 +93,7 @@ struct COLLECTABLES_DATA {
     int y;
     uint8_t type;
     uint8_t frame;
-    uint8_t speed = 5;
+    uint8_t speed = 4;
     uint8_t collected;
     int mapPos;
 } items[100];
@@ -107,6 +121,16 @@ struct ENEMY_DATA {
 } enemy[100];
 int maxEnemies=0;
 
+struct ANIMATION_DATA {
+    int x;  // x postition
+    int y;  // y position
+    int startX;
+    int startY;
+    int frame;
+    bool used=false;
+    int frameCount=0;
+} animSprite[20];
+
 #define GRAVITY 56
 #define MAXGRAVITY 0b1111111111111
 #define PLAYER_SPEED 512
@@ -130,9 +154,12 @@ double saturation = 0;
 int mapWidth=0;
 int mapHeight=0;
 int numGems=0;
-
 int levelNumber = 0;
 
+int HUD_gemTimer=0;
+int HUD_livesTimer=0;
+#define HUD_gemTimerStart 60;
+int HUD_gemFrameCount=0;
 
 // pointers to our data
 const uint8_t* levelData = nullptr;
@@ -147,6 +174,7 @@ using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level ti
 int lastLoad=0;
 
 int mapPos;
+
 
 
 
