@@ -269,7 +269,7 @@ void initTimer(uint32_t sampleRate){
      /* Initialize 32-bit timer 0 clock */
 	Chip_TIMER_Init(LPC_TIMER32_0);
     /* Timer rate is system clock rate */
-	timerFreq = Chip_Clock_GetSystemClockRate();
+	int timerFreq = Chip_Clock_GetSystemClockRate();
 	/* Timer setup for match and interrupt at TICKRATE_HZ */
 	Chip_TIMER_Reset(LPC_TIMER32_0);
 	/* Enable both timers to generate interrupts when time matches */
@@ -281,12 +281,12 @@ void initTimer(uint32_t sampleRate){
 	/* Start both timers */
 	Chip_TIMER_Enable(LPC_TIMER32_0);
 	/* Clear both timers of any pending interrupts */
-    #define TIMER_32_0_IRQn 18
-	NVIC_ClearPendingIRQ((IRQn_Type)TIMER_32_0_IRQn);
+    #define MY_TIMER_32_0_IRQn 18
+	NVIC_ClearPendingIRQ((IRQn_Type)MY_TIMER_32_0_IRQn);
     /* Redirect IRQ vector - Jonne*/
-    NVIC_SetVector((IRQn_Type)TIMER_32_0_IRQn, (uint32_t)&TIMER32_0_IRQHandler);
+    NVIC_SetVector((IRQn_Type)MY_TIMER_32_0_IRQn, (uint32_t)&audioTimer);
 	/* Enable both timer interrupts */
-	NVIC_EnableIRQ((IRQn_Type)TIMER_32_0_IRQn);
+	NVIC_EnableIRQ((IRQn_Type)MY_TIMER_32_0_IRQn);
 }
 
 
