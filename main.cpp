@@ -509,7 +509,10 @@ int main(){
     printf("Joe2\r\n");
 
     frameSkip=0;
+    
+    Pokitto::Core::update(); // needed first to setup IRQ that I will 'borrow' for my own sound.
     playRandomTune();
+    
     while( PC::isRunning() ){
         
         updateStream();
@@ -537,6 +540,9 @@ int main(){
         char tempText[100];
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,160,tempText);
+
+        sprintf(tempText,"TC:%d",timerCounter);
+        myPrint(0,152,tempText);
 
         if(PC::getTime() >= lastMillis+1000){
             lastMillis = PC::getTime();

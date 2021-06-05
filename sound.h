@@ -1,4 +1,3 @@
-#define MY_TIMER_32_0_IRQn 18          // for Timer setup
 #include "timer_11u6x.h"
 #include "clock_11u6x.h"
 
@@ -9,7 +8,6 @@ File sfxFile;
 int LISTENINGSAMPLERATE = 8000;
 bool streamMusic = 1;
 
-
 const char* folderName = "/joe2/";
 
 const char* songnames[] = {
@@ -18,16 +16,12 @@ const char* songnames[] = {
 
 const char* sfxnames[] = {
 "water.raw",
-"fire.raw",
-"afi_obsession_endrock.raw",
 };
 
 void playRandomTune();
 
 //const char* ambianceBackground[] = {"ephemeral_rift_flute_and_stream.raw","ephemeral_rift_throat_singing.raw"};
 int currentSongNumber = 0;
-
-//const uint8_t bitVal[]={0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111},
 
 // enableDAC() from Pokitto MiniLib
 inline void enableDAC() {
@@ -44,6 +38,10 @@ inline void enableDAC() {
     volatile unsigned int* SET1 = (unsigned int*)(0xa0002204);
     *DIR1 |= 1 << 17;
     *SET1 = 1 << 17;
+
+    // enableAmp...
+    LPC_GPIO_PORT->SET[1] = (1 << 17);
+    
 }
 
 // writeDAC() from Pokitto MiniLib
@@ -71,7 +69,6 @@ typedef struct{
 }sampletype;
 
 sampletype snd[4]; // up to 4 sounds at once?
-
 
 #define audioBufferSize 512
 unsigned char *audioBuffer = (unsigned char *) 0x20000000;
@@ -147,7 +144,6 @@ uint8_t playSound(int channel, const unsigned char *sound, int volume = 255, int
     return channel;
 }
 
-
 inline uint8_t myMixSound()
 {
     uint8_t divide = 0;
@@ -155,7 +151,6 @@ inline uint8_t myMixSound()
     
     if(playBGM == true && playingMusic1 == true) {number = (audioBuffer[audioOffset]-128); divide++;}
     if(playSFX == true && playingMusic2 == true) {number +=(audioBuffer2[audioOffset]-128); divide++;}
-    printf("number:%d\n",number);
 
     int currentPos;
     // check the 2 snd channels for playing audio
@@ -224,18 +219,16 @@ void clearAudioBuffer(int num=0){
 }
 
 inline void updateStream(){
-    //printf("updateStream\n");
     // Update music playing
     if( currentBuffer != completeBuffer){
-        printf("change buffer\n");
         completeBuffer = currentBuffer;
         if(playingMusic1){
-            printf("playing music\n");
             if(!musicFile.read(&audioBuffer[bufferOffset[completeBuffer]], audioBufferSize)){
-                printf("keep reading\n");
                 clearAudioBuffer(1);
                 playingMusic1 = false;
                 playRandomTune();
+            }else{
+                timerCounter++;
             }
         }
         if(playingMusic2){
@@ -248,24 +241,28 @@ inline void updateStream(){
 }
 
 inline void audioTimer(void){
-    printf("timer\n");
-	if (Chip_TIMER_MatchPending(LPC_TIMER32_0, 1)) {
-        printf("timer match\n");
 
-        //writeDAC( myMixSound() );
-        //if(++audioOffset == audioBufferSize*4){
-        //    audioOffset = 0;
-        //}
-        //currentBuffer = audioOffset/audioBufferSize;
+	if (Chip_TIMER_MatchPending(LPC_TIMER32_0, 1)) {
+
+        writeDAC( myMixSound() );
+        if(++audioOffset == audioBufferSize*4){
+            audioOffset = 0;
+        }
+        currentBuffer = audioOffset/audioBufferSize;
 
  	    Chip_TIMER_ClearMatch(LPC_TIMER32_0, 1);
-        printf("timer cleared\n");
     }
 }
 
 
 // timer init stolen directly from Pokittolib
 void initTimer(uint32_t sampleRate){
+    
+    // enable amp
+    LPC_GPIO_PORT->SET[1] = (1 << 17);
+
+    enableDAC();
+    
      /* Initialize 32-bit timer 0 clock */
 	Chip_TIMER_Init(LPC_TIMER32_0);
     /* Timer rate is system clock rate */
@@ -275,7 +272,7 @@ void initTimer(uint32_t sampleRate){
 	/* Enable both timers to generate interrupts when time matches */
 	Chip_TIMER_MatchEnableInt(LPC_TIMER32_0, 1);
     /* Setup 32-bit timer's duration (32-bit match time) */
-	Chip_TIMER_SetMatch(LPC_TIMER32_0, 1, (timerFreq / POK_AUD_FREQ));
+	Chip_TIMER_SetMatch(LPC_TIMER32_0, 1, (timerFreq / sampleRate));
 	/* Setup both timers to restart when match occurs */
 	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER32_0, 1);
 	/* Start both timers */
@@ -289,28 +286,23 @@ void initTimer(uint32_t sampleRate){
 	NVIC_EnableIRQ((IRQn_Type)MY_TIMER_32_0_IRQn);
 }
 
-
 void startSong(const char* filename){
 
     if(musicFile.openRO(filename)){
         playingMusic1 = true;
         initTimer(LISTENINGSAMPLERATE);
-        printf("%s found!\n",filename);
     }else{
         playingMusic1 = false;
         clearAudioBuffer(1);
-        printf("%s not found!\n",filename);
     }
 }
 
 void startBGFX(const char* filename){
     if(sfxFile.openRO(filename)){
         playingMusic2 = true;
-        printf("%s found!\n",filename);
     }else{
         playingMusic2 = false;
         clearAudioBuffer(2);
-        printf("%s not found!\n",filename);
     }
 }
 
@@ -325,7 +317,7 @@ void playRandomTune(){
     currentSongNumber = 0;//temp;
 
     snprintf(fullSongName,sizeof(fullSongName), "%s%s", folderName, songnames[currentSongNumber]);
-    printf("%s%s\n", folderName, songnames[currentSongNumber]);
+    //printf("%s%s\n", folderName, songnames[currentSongNumber]);
     startSong(fullSongName);
 }
 

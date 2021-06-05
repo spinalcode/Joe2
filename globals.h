@@ -15,6 +15,8 @@ const uint16_t palette2[] = {0};
 bool interlaceScreen = false;
 bool mustDraw=true;
 
+long int timerCounter=0;
+
 uint8_t colourBlack=7;
 
 uint16_t bgline_pal[92];
