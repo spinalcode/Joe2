@@ -41,7 +41,7 @@ inline void enableDAC() {
 
     // enableAmp...
     LPC_GPIO_PORT->SET[1] = (1 << 17);
-    
+
 }
 
 // writeDAC() from Pokitto MiniLib
@@ -88,9 +88,11 @@ int globalVolume = 16;
 
 
 // new playsound function
-uint8_t playSound(int channel, const unsigned char *sound, int volume = 255, int speed=255, int offset=0){
+uint8_t playSound(int channel, const unsigned char *sound, int volume = 100, int speed=255, int offset=0){
     
-    if(playSFX == false) return 0;
+    
+    
+    //if(playSFX == false) return 0;
     
     int dataOffset = 14 + offset;
 
@@ -148,12 +150,14 @@ inline uint8_t myMixSound()
 {
     uint8_t divide = 0;
     signed int number=0;
+    // background music
+    if(playingMusic1 == true){
+        number = ((audioBuffer[audioOffset]-128)*volume.bgm)/100; // adjust for volume
+        divide++;
+    }
     
-    if(playBGM == true && playingMusic1 == true) {number = (audioBuffer[audioOffset]-128); divide++;}
-    if(playSFX == true && playingMusic2 == true) {number +=(audioBuffer2[audioOffset]-128); divide++;}
-
+    // sfx samples
     int currentPos;
-    // check the 2 snd channels for playing audio
     for(uint8_t s=0; s<2; s++){
         if(snd[s].playSample == 1){
             snd[s].soundPoint++;
@@ -167,38 +171,14 @@ inline uint8_t myMixSound()
                 }
             }
             divide++;
-            number += (snd[s].currentSound[currentPos]-128);
+            number += ((snd[s].currentSound[currentPos]-128)*snd[s].volume)/100;
         }
-    }
-
-    if(number>0 && number <1)number=1;
-    if(number<=0 && number >-1)number=-1;
-
-    if(divide == 0){ // divide is how many samples have been added together
-        number=0;
-    }else{
-        number *= Pokitto::Core::sound.getVolume();
-        //number = number >> (divide+7);
-        // be double sure of keeping sign bit, thanks @FManga
-        //number = int32_t(number + (uint32_t(number)>>31)) >> (divide+7);
-        
-        // apparently dividing the result by the sqrt of the number of samples is a good way to mix...
-        float sqt[]={0.0,1.0,1.41421356237,1.73205080757,2.0};
-        number = number/sqt[divide];
-        number = number >> 8;
-        if(number <-127)number=-127;
-        if(number >127)number=127;
-        
-        /*
-        // if volume is low, then add random noise
-        if(Pokitto::Core::sound.getVolume()<64){
-            uint8_t r = random(-1,1);
-            number += r;
-        }
-        */
     }
     
-    return (uint8_t)(number+128)&255;
+    number /= divide;
+    number += 128; // return to unsigned
+    
+    return number;
 }
 
 void clearAudioBuffer(int num=0){
@@ -241,9 +221,7 @@ inline void updateStream(){
 }
 
 inline void audioTimer(void){
-
 	if (Chip_TIMER_MatchPending(LPC_TIMER32_0, 1)) {
-
         writeDAC( myMixSound() );
         if(++audioOffset == audioBufferSize*4){
             audioOffset = 0;
@@ -257,16 +235,12 @@ inline void audioTimer(void){
 
 // timer init stolen directly from Pokittolib
 void initTimer(uint32_t sampleRate){
+//    enableDAC();
     
-    // enable amp
-    LPC_GPIO_PORT->SET[1] = (1 << 17);
-
-    enableDAC();
-    
-     /* Initialize 32-bit timer 0 clock */
+    /* Initialize 32-bit timer 0 clock */
 	Chip_TIMER_Init(LPC_TIMER32_0);
     /* Timer rate is system clock rate */
-	int timerFreq = Chip_Clock_GetSystemClockRate();
+	uint32_t timerFreq = Chip_Clock_GetSystemClockRate();
 	/* Timer setup for match and interrupt at TICKRATE_HZ */
 	Chip_TIMER_Reset(LPC_TIMER32_0);
 	/* Enable both timers to generate interrupts when time matches */
@@ -278,15 +252,16 @@ void initTimer(uint32_t sampleRate){
 	/* Start both timers */
 	Chip_TIMER_Enable(LPC_TIMER32_0);
 	/* Clear both timers of any pending interrupts */
-    #define MY_TIMER_32_0_IRQn 18
-	NVIC_ClearPendingIRQ((IRQn_Type)MY_TIMER_32_0_IRQn);
+	#define TIMER_32_0_IRQn 18
+	NVIC_ClearPendingIRQ((IRQn_Type)TIMER_32_0_IRQn);
     /* Redirect IRQ vector - Jonne*/
-    NVIC_SetVector((IRQn_Type)MY_TIMER_32_0_IRQn, (uint32_t)&audioTimer);
+    NVIC_SetVector((IRQn_Type)TIMER_32_0_IRQn, (uint32_t)&audioTimer);
 	/* Enable both timer interrupts */
-	NVIC_EnableIRQ((IRQn_Type)MY_TIMER_32_0_IRQn);
+	NVIC_EnableIRQ((IRQn_Type)TIMER_32_0_IRQn);
 }
 
 void startSong(const char* filename){
+    playBGM = true;
 
     if(musicFile.openRO(filename)){
         playingMusic1 = true;
@@ -308,6 +283,9 @@ void startBGFX(const char* filename){
 
 
 void playRandomTune(){
+    clearAudioBuffer(1);
+    clearAudioBuffer(2);
+
     char fullSongName[256];
     
     //int temp = random( (sizeof(songnames)/sizeof(songnames[0])) );
@@ -317,7 +295,7 @@ void playRandomTune(){
     currentSongNumber = 0;//temp;
 
     snprintf(fullSongName,sizeof(fullSongName), "%s%s", folderName, songnames[currentSongNumber]);
-    //printf("%s%s\n", folderName, songnames[currentSongNumber]);
+    printf("%s%s\n", folderName, songnames[currentSongNumber]);
     startSong(fullSongName);
 }
 

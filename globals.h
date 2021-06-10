@@ -1,5 +1,10 @@
 
 //File bgmFile;
+int myVolume = 0;
+
+#define MAXSTEP 64
+#define MAXSPEED 512
+#define PLAYER_SPEED 512
 
 bool clearScreen=false;
 long int myDelay;
@@ -78,6 +83,7 @@ struct PLAYER_DATA {
     uint8_t direction;
     uint8_t step;
     uint8_t gotHat = 0;
+    int speed = 0;
     
     int centre = 7;
     int rightBound = 15;
@@ -89,6 +95,8 @@ struct PLAYER_DATA {
     bool jumping;
     bool dropping=false; // is falling through bridge?
 } player;
+
+uint8_t onGround[51]; // buffer of being on the ground, for safer jumping
 
 struct COLLECTABLES_DATA {
     int x;
@@ -111,6 +119,7 @@ struct ENEMY_DATA {
     uint8_t frame; // tile number
     uint8_t direction;
     uint8_t step;
+    int numFrames;
 
     uint8_t type=0;
     uint8_t speed=6;
@@ -135,7 +144,11 @@ struct ANIMATION_DATA {
 
 #define GRAVITY 56
 #define MAXGRAVITY 0b1111111111111
-#define PLAYER_SPEED 512
+
+struct VOLUME_DATA {
+    int bgm = 75;  // bgm volume
+    int sfx = 100;  // sfx volume
+} volume;
 
 int screenX = 0;
 int screenY = 0;

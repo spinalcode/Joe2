@@ -1,16 +1,17 @@
 #include <Pokitto.h>
 #include <LibHotswap>
 #include <File>
+#include "PokittoCookie.h"
 
-Serial ser(EXT7, EXT6);
+#include <SoftwareI2C.h>
 
 #include "globals.h"
 #include "sound.h"
 #include "sprites.h"
 #include "font.h"
+#include "samples.h"
 
 #include "buttonhandling.h"
-#include <LibAudio>
 
 #include "background.h"
 #include "screen.h"
@@ -45,15 +46,15 @@ int checkCollision(int x, int y){
     int pixel = 0;
     
     int colTile = (bg.miniMap[2+ px2 + bg.miniMap[0] * py2]>>10)&31;
-    int flipped = bg.miniMap[2+ px2 + bg.miniMap[0] * py2]&32768;
+    //int flipped = bg.miniMap[2+ px2 + bg.miniMap[0] * py2]&32768;
 
     int px = x&7; // is &7 faster than %8 ?
     int py = y&7;
-    if(flipped == 0){
+    //if(flipped == 0){
         pixel = collisionTile[(64*colTile)+px+8*py];
-    }else{
-        pixel = collisionTile[(64*colTile)+(7-px)+8*py];
-    }
+    //}else{
+    //    pixel = collisionTile[(64*colTile)+(7-px)+8*py];
+    //}
         
     return pixel;
 }
@@ -90,11 +91,19 @@ void renderSprites(){
     for(int t=0; t<maxEnemies; t++){
         if(enemy[t].type != 0){
 
-            if(++enemy[t].frame >= 4*enemy[t].speed){enemy[t].frame=0;}
+            if(++enemy[t].frame >= enemy[t].numFrames*enemy[t].speed){enemy[t].frame=0;}
             int theX = enemy[t].x-bg.mapX;
             int theY = enemy[t].y-bg.mapY;
             if(theX>-16 && theX<220 && theY>-16 && theY<176){
-                Pokitto::Display::drawSprite(theX, theY, enemy1[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                if(enemy[t].type==1){
+                    Pokitto::Display::drawSprite(theX, theY, enemy1[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                }
+                if(enemy[t].type==2){
+                    Pokitto::Display::drawSprite(theX, theY, enemy2[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                }
+                if(enemy[t].type==3){
+                    Pokitto::Display::drawSprite(theX, theY, enemy3[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                }
             }
         } // not dead
     }
@@ -163,6 +172,10 @@ void gameLogic(){
 
     player.onGround = false;
 
+    //if(_Up_But[NEW]){ myVolume++;}
+    //if(_Down_But[NEW]){ myVolume--;}
+
+
     if(_Left_But[NEW]){ player.flip = 1;}
     if(_Right_But[NEW]){ player.flip = 0;}
 
@@ -171,7 +184,9 @@ void gameLogic(){
         player.step = 0;
     }
 
-    //player.x += (_Right_But[HELD] - _Left_But[HELD]) * PLAYER_SPEED;
+//    if(_B_But[HELD] && (_Left_But[HELD] || _Right_But[HELD])){player.speed +=8;}else{player.speed -=16;}
+
+    //player.x += (_Right_But[HELD] - _Left_But[HELD]) * MAXSPEED;
     if(_Right_But[HELD]){
         while(rightCollision(player.x>>8, player.y>>8)==SOLID && rightCollision((player.x>>8)+1, (player.y>>8)-8)==SOLID){
             player.x -= 128;
@@ -187,6 +202,31 @@ void gameLogic(){
         player.x -= PLAYER_SPEED;
         if(frameSkip==0){player.step ++;}
     }
+
+/*
+    if(_Right_But[HELD]){
+        player.speed += (MAXSTEP * (_B_But[HELD]+1));
+        while(rightCollision(player.x>>8, player.y>>8)==SOLID && rightCollision((player.x>>8)+1, (player.y>>8)-8)==SOLID){
+            player.x -= 128;
+            player.speed = 0;
+        }
+        if(frameSkip==0){player.step ++;}
+    }
+
+    if(_Left_But[HELD]){
+        player.speed -= (MAXSTEP * (_B_But[HELD]+1));
+        while(leftCollision(player.x>>8, player.y>>8)==SOLID && leftCollision((player.x>>8)-1, (player.y>>8)-8)==SOLID){
+            player.x += 128;
+            player.speed = 0;
+        }
+        if(frameSkip==0){player.step ++;}
+    }
+
+    if(player.speed > (MAXSPEED * (_B_But[HELD]+1))) player.speed=(MAXSPEED * (_B_But[HELD]+1));
+    if(player.speed < -(MAXSPEED * (_B_But[HELD]+1))) player.speed=-(MAXSPEED * (_B_But[HELD]+1));
+    player.x += player.speed;
+    if(!_Left_But[HELD] && !_Right_But[HELD]) player.speed *= 0.75;
+*/
 
     if (player.step >= 2) {
         player.frame++;
@@ -216,7 +256,14 @@ void gameLogic(){
     }
 
     if(player.vy >= 0){
-        int colLeft = checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.lowerBound);
+        // falling
+        // first check a couple of pixels down ti 'hug' the ground on ramps
+        int colLeft = checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.lowerBound+2);
+        if (colLeft == SOLID || (colLeft == JUMPTHROUGH && player.dropping==false)){
+            player.y += (2<<8);
+        }
+        
+        colLeft = checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.lowerBound);
         while (colLeft == SOLID || (colLeft == JUMPTHROUGH && player.dropping==false) ) { // if player feet inside collision layer
     		player.y -= 128; // move player up by half pixel
             colLeft = checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.lowerBound);
@@ -253,9 +300,21 @@ void gameLogic(){
         player.jumping = false;
     }
 
+    int checkAmount = 10;
+    for(int t=0; t<checkAmount; t++){
+        onGround[t] = onGround[t+1];
+    }
+    onGround[checkAmount] = player.onGround;
 
-	if (_A_But[NEW] && player.onGround == true){ 
-	    player.vy = -player.jumpHeight; // Start jumping
+	if (_A_But[NEW]){
+	    bool checked = false;
+        for(int t=0; t<checkAmount; t++){
+            if(onGround[t] && checked == false){
+                checked = true;
+        	    player.vy = -player.jumpHeight; // Start jumping
+                playSound(0, sfx_jump, 100, random(63)+192);
+            }
+        }
 	}
 
     int mapX = player.x-28160;
@@ -338,11 +397,12 @@ void gameLogic(){
                     // check for collisions in the animation loop
                     if((player.x>>8)+player.centre >= items[t].x && (player.x>>8)+player.centre <= items[t].x + 16){
                         if((player.y>>8)+player.centre >= items[t].y && (player.y>>8)+player.centre <= items[t].y + 16){
+
+                            playSound(1, sfx_drop, 300, random(63)+192);
+
                             items[t].collected = 1;
                             int theX = items[t].x-bg.mapX;
                             int theY = items[t].y-bg.mapY;
-                            //printf("x:%d y:%d\n",theX,theY);
-                            
                             startAnimation(theX, theY, items[t].type);
                             switch(items[t].type){
                                 case 1:
@@ -455,9 +515,9 @@ void titleScreen(){
         reSaturate(0,0,0);
         gameMode=1;
     
-        //Audio::stop();
+        playingMusic1 = false;
         loadLevel(1);
-        //Audio::play(bgmFile, bgmFile.size());
+        playingMusic1 = true;
 
     
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
@@ -473,6 +533,13 @@ void titleScreen(){
     }
 
 }
+
+
+void C_Menu(){
+    
+}
+
+
 
 int main(){
     using PC=Pokitto::Core;
@@ -505,8 +572,6 @@ int main(){
 
 
     mustDraw=true;
-    ser.baud(115200);
-    printf("Joe2\r\n");
 
     frameSkip=0;
     
@@ -518,6 +583,12 @@ int main(){
         updateStream();
         if(frameSkip==0){
             if( !PC::update() ) continue;
+            
+            //SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
+            //swvolpot.write(0x5e,myVolume);
+            //if(myVolume>64){myVolume=64;}
+            //if(myVolume<0){myVolume=0;}
+            
         }else{
             PC::update(0); // don't update screen.
         }
@@ -541,7 +612,7 @@ int main(){
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,160,tempText);
 
-        sprintf(tempText,"TC:%d",timerCounter);
+        sprintf(tempText,"speed:%d",player.speed);
         myPrint(0,152,tempText);
 
         if(PC::getTime() >= lastMillis+1000){

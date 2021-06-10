@@ -112,7 +112,6 @@ void updateMap(int mx, int my){
 void initMap(){
     File file1;
     if(file1.openRO(levelFilename)){
-        ser.printf("file open\r\n");
         file1.read(&bg.mapWidth, 2);
         file1.read(&bg.mapHeight, 2);
     }
@@ -199,6 +198,10 @@ void loadLevel(int levNum){
     maxItems=0;
     maxEnemies=0;
     
+    bg.numRed=0;
+    bg.numBlue=0;
+    bg.numGreen=0;
+    
     int x=0;
     int y=0;
     for(int t=0; t<(mapWidth*mapHeight); t++){
@@ -250,28 +253,31 @@ void loadLevel(int levNum){
                     items[maxItems].type = ((curTile >> 10)&31)-3; // gem
                     maxItems++;
             }
-            if(tl == tileType[7]){ // 8 = Keith - the first enemy
+            if(tl == tileType[7]){ // 7 = Keith - the first enemy
                     player.startX = (x*8)<<8;
                     player.startY = (y*8)<<8;
                     enemy[maxEnemies].x = (x-1)*8;
                     enemy[maxEnemies].y = (y*8)+2;
                     enemy[maxEnemies].type = 1; // 0 = dead?
+                    enemy[maxEnemies].numFrames = 4;
                     maxEnemies++;
             }
-            if(tl == tileType[8]){ // 8 = Keith - the first enemy
+            if(tl == tileType[8]){ // 8 = Tom - the second enemy
                     player.startX = (x*8)<<8;
                     player.startY = (y*8)<<8;
                     enemy[maxEnemies].x = (x-1)*8;
                     enemy[maxEnemies].y = (y*8)+2;
-                    enemy[maxEnemies].type = 1; // 0 = dead?
+                    enemy[maxEnemies].type = 2; // 0 = dead?
+                    enemy[maxEnemies].numFrames = 4;
                     maxEnemies++;
             }
-            if(tl == tileType[9]){ // 8 = Keith - the first enemy
+            if(tl == tileType[9]){ // 9 = Bird - the third enemy
                     player.startX = (x*8)<<8;
                     player.startY = (y*8)<<8;
                     enemy[maxEnemies].x = (x-1)*8;
                     enemy[maxEnemies].y = (y*8)+2;
-                    enemy[maxEnemies].type = 1; // 0 = dead?
+                    enemy[maxEnemies].type = 3; // 0 = dead?
+                    enemy[maxEnemies].numFrames = 6;
                     maxEnemies++;
             }
             if(tl == tileType[10]){ // 8 = Keith - the first enemy
@@ -287,14 +293,7 @@ void loadLevel(int levNum){
     }
     levfile.close();
     //waitButton();
-    
-    ser.printf("maxEnemies %d\r\n",maxEnemies);
-    ser.printf("maxItems %d\r\n",maxItems);
 
-    ser.printf("\r\n\r\n\r\n");
-    
-    
-    
     bg.redPercent = 1.0/bg.numRed;
     bg.greenPercent = 1.0/bg.numGreen;
     bg.bluePercent = 1.0/bg.numBlue;
