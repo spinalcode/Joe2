@@ -206,8 +206,11 @@ void checkItemCollisions(){
                             }
                             
                             //reSaturate(bg.satRed,bg.satGreen,bg.satBlue);
-                            int tempSat = ((bg.numRed+bg.numGreen+bg.numBlue)*(bg.countRed+bg.countGreen+bg.countBlue))/100;
-                            float satAmount = satRamp[tempSat]/100;
+                            float bigNum = bg.numRed+bg.numGreen+bg.numBlue;
+                            float littleNum = bg.countRed+bg.countGreen+bg.countBlue;
+                            float tempSat = littleNum/bigNum;
+                            int percent = tempSat*100;
+                            float satAmount = (float)satRamp[percent]/100;
                             reSaturate(satAmount,satAmount,satAmount);
                         }
                     }
@@ -627,8 +630,14 @@ int main(){
 
         char tempText[32];
         //sprintf(tempText,"Col:%d",checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.lowerBound+2));
-        sprintf(tempText,"%d",((bg.numRed+bg.numGreen+bg.numBlue)*(bg.countRed+bg.countGreen+bg.countBlue))/100);
-        myPrint(0,16,tempText);
+
+        float bigNum = bg.numRed+bg.numGreen+bg.numBlue;
+        float littleNum = bg.countRed+bg.countGreen+bg.countBlue;
+        float tempSat = littleNum/bigNum;
+        int percent = tempSat*100;
+        int satAmount = satRamp[percent];
+        sprintf(tempText,"%d,%d,%d",percent,satAmount,sizeof(satRamp));
+        myPrint(0,32,tempText);
 
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,160,tempText);
