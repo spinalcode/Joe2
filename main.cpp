@@ -69,7 +69,7 @@ int rightCollision(int x, int y){
 
 void startAnimation(int x, int y, int itemType){
 
-    printf("x:%d y:%d\n",x,y);
+    //printf("x:%d y:%d\n",x,y);
 
     int useSprite=0;
     for(int t=20; t; t--){
@@ -81,7 +81,7 @@ void startAnimation(int x, int y, int itemType){
     animSprite[useSprite].startY = y;
     animSprite[useSprite].frame = itemType;
     animSprite[useSprite].used = true;
-    animSprite[useSprite].frameCount = 0;
+    animSprite[useSprite].frameCount = 1;
 }
 
 
@@ -102,7 +102,7 @@ void renderSprites(){
                     Pokitto::Display::drawSprite(theX, theY, enemy2[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
                 }
                 if(enemy[t].type==3){
-                    Pokitto::Display::drawSprite(theX, theY, enemy3[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                    Pokitto::Display::drawSprite(theX, theY+enemy[t].offy, enemy3[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
                 }
             }
         } // not dead
@@ -138,9 +138,9 @@ void renderSprites(){
     for(int t=0; t<20; t++){
         if(animSprite[t].used==true){
             Pokitto::Display::drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].frame-1)*(sizeof(gemFrame)/2) + gemFrame[0]],0,0,240);
-            animSprite[t].x = animSprite[t].startX-easeInOut(animSprite[t].frameCount++, 0, animSprite[t].startX, 15);
-            animSprite[t].y = animSprite[t].startY-easeInOut(animSprite[t].frameCount++, -16, animSprite[t].startY+16, 15);
-            if(animSprite[t].x < 8 || animSprite[t].y < 8){animSprite[t].used = false;}else{HUD_gemTimer = HUD_gemTimerStart;}
+            animSprite[t].x = animSprite[t].startX-easeInOut(animSprite[t].frameCount, 0, animSprite[t].startX, 10);
+            animSprite[t].y = animSprite[t].startY-easeInOut(animSprite[t].frameCount, -16, animSprite[t].startY+16, 10);
+            if(++animSprite[t].frameCount==20){animSprite[t].used = false;}else{HUD_gemTimer = HUD_gemTimerStart;}
         }
     }
 
@@ -160,6 +160,97 @@ void renderSprites(){
     }
 
 }
+
+
+void checkItemCollisions(){
+    //items
+    for(int t=0; t<maxItems; t++){
+        if(items[t].collected == 0){
+
+            items[t].frame++;
+            if(items[t].frame >= sizeof(gemFrame)*items[t].speed){items[t].frame=0;}
+            if(items[t].type!=0){
+                int flipme=0;
+                int frame = (items[t].frame/items[t].speed);
+                if(frame >= sizeof(gemFrame)/2){
+                    flipme=1;
+                }
+                
+                int theX = items[t].x-bg.mapX;
+                int theY = items[t].y-bg.mapY;
+                
+                if(theX>-16 && theX<220 && theY>-16 && theY<176){
+                    // check for collisions in the animation loop
+                    if((player.x>>8)+player.centre >= items[t].x-4 && (player.x>>8)+player.centre <= items[t].x + 20){
+                        if((player.y>>8)+player.centre >= items[t].y-4 && (player.y>>8)+player.centre <= items[t].y + 20){
+
+                            playSound(1, sfx_drop, 300, random(63)+192);
+
+                            items[t].collected = 1;
+                            int theX = items[t].x-bg.mapX;
+                            int theY = items[t].y-bg.mapY;
+                            startAnimation(theX, theY, items[t].type);
+                            switch(items[t].type){
+                                case 1:
+                                    bg.satRed += bg.redPercent;
+                                    bg.countRed++;
+                                    break;
+                                case 2:
+                                    bg.satGreen += bg.greenPercent;
+                                    bg.countGreen++;
+                                    break;
+                                case 3:
+                                    bg.satBlue += bg.bluePercent;
+                                    bg.countBlue++;
+                                    break;
+                            }
+                            
+                            //reSaturate(bg.satRed,bg.satGreen,bg.satBlue);
+                            int tempSat = ((bg.numRed+bg.numGreen+bg.numBlue)*(bg.countRed+bg.countGreen+bg.countBlue))/100;
+                            float satAmount = satRamp[tempSat]/100;
+                            reSaturate(satAmount,satAmount,satAmount);
+                        }
+                    }
+                }
+            } // type = 1 (gem)
+        } // collected
+    }
+}
+
+
+void moveEnemies(){
+    //enemies
+    for(int t=0; t<maxEnemies; t++){
+        if(enemy[t].type != 0){
+
+            if(++enemy[t].frame >= 4*enemy[t].speed){enemy[t].frame=0;}
+            int theX = enemy[t].x-bg.mapX;
+            int theY = enemy[t].y-bg.mapY;
+            if(theX>-16 && theX<220 && theY>-16 && theY<176){
+
+                if(enemy[t].direction==0){
+                    if((checkCollision(enemy[t].x+15, enemy[t].y+15) == SOLID || checkCollision(enemy[t].x+15, enemy[t].y+15) == JUMPTHROUGH) ||
+                        (checkCollision(enemy[t].x+15, enemy[t].y+16) != SOLID && checkCollision(enemy[t].x+15, enemy[t].y+16) != JUMPTHROUGH) ){
+                        enemy[t].direction=1;
+                    }else{
+                        enemy[t].x++;
+                    }
+                }
+                if(enemy[t].direction==1){
+                    if((checkCollision(enemy[t].x-1, enemy[t].y+15) == SOLID || checkCollision(enemy[t].x-1, enemy[t].y+15) == JUMPTHROUGH) || 
+                        (checkCollision(enemy[t].x-1, enemy[t].y+16) != SOLID && checkCollision(enemy[t].x+1, enemy[t].y+16) != JUMPTHROUGH) ){
+                        enemy[t].direction=0;
+                    }else{
+                        enemy[t].x--;
+                    }
+                }
+            
+            }
+        } // not dead
+    }
+    
+}
+
 
 void gameLogic(){
 
@@ -274,6 +365,7 @@ void gameLogic(){
             player.onGround = true; // say were on the ground
             player.dropping=false;
         }
+        
     }
 
     if(player.dropping==true){
@@ -300,7 +392,14 @@ void gameLogic(){
         player.jumping = false;
     }
 
-    int checkAmount = 10;
+
+    // check for 'death tiles'
+    if (checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.centre) == DEATHCOLOUR){
+        gameMode = 0;
+    }
+
+
+    int checkAmount = 7;
     for(int t=0; t<checkAmount; t++){
         onGround[t] = onGround[t+1];
     }
@@ -375,95 +474,11 @@ void gameLogic(){
 
 
     
-    if((player.y>>8)-bg.mapY>=204){gameMode = 0;}
-
-    //items
-    for(int t=0; t<maxItems; t++){
-        if(items[t].collected == 0){
-
-            items[t].frame++;
-            if(items[t].frame >= sizeof(gemFrame)*items[t].speed){items[t].frame=0;}
-            if(items[t].type!=0){
-                int flipme=0;
-                int frame = (items[t].frame/items[t].speed);
-                if(frame >= sizeof(gemFrame)/2){
-                    flipme=1;
-                }
-                
-                int theX = items[t].x-bg.mapX;
-                int theY = items[t].y-bg.mapY;
-                
-                if(theX>-16 && theX<220 && theY>-16 && theY<176){
-                    // check for collisions in the animation loop
-                    if((player.x>>8)+player.centre >= items[t].x && (player.x>>8)+player.centre <= items[t].x + 16){
-                        if((player.y>>8)+player.centre >= items[t].y && (player.y>>8)+player.centre <= items[t].y + 16){
-
-                            playSound(1, sfx_drop, 300, random(63)+192);
-
-                            items[t].collected = 1;
-                            int theX = items[t].x-bg.mapX;
-                            int theY = items[t].y-bg.mapY;
-                            startAnimation(theX, theY, items[t].type);
-                            switch(items[t].type){
-                                case 1:
-                                    bg.satRed += bg.redPercent;
-                                    bg.countRed++;
-                                    break;
-                                case 2:
-                                    bg.satGreen += bg.greenPercent;
-                                    bg.countGreen++;
-                                    break;
-                                case 3:
-                                    bg.satBlue += bg.bluePercent;
-                                    bg.countBlue++;
-                                    break;
-                            }
-                            reSaturate(bg.satRed,bg.satGreen,bg.satBlue);
-                        }
-                    }
+    //f((player.y>>8)-bg.mapY>=204){gameMode = 0;}
 
 
-                }
-
-                
-
-            } // type = 1 (gem)
-        } // collected
-
-    }
-
-
-
-
-    //enemies
-    for(int t=0; t<maxEnemies; t++){
-        if(enemy[t].type != 0){
-
-            if(++enemy[t].frame >= 4*enemy[t].speed){enemy[t].frame=0;}
-            int theX = enemy[t].x-bg.mapX;
-            int theY = enemy[t].y-bg.mapY;
-            if(theX>-16 && theX<220 && theY>-16 && theY<176){
-
-                if(enemy[t].direction==0){
-                    if(checkCollision(enemy[t].x+15, enemy[t].y+15) == SOLID ||
-                        checkCollision(enemy[t].x+15, enemy[t].y+16) != SOLID ){
-                        enemy[t].direction=1;
-                    }else{
-                        enemy[t].x++;
-                    }
-                }
-                if(enemy[t].direction==1){
-                    if(checkCollision(enemy[t].x-1, enemy[t].y+15) == SOLID || 
-                        checkCollision(enemy[t].x-1, enemy[t].y+16) != SOLID ){
-                        enemy[t].direction=0;
-                    }else{
-                        enemy[t].x--;
-                    }
-                }
-            
-            }
-        } // not dead
-    }
+    checkItemCollisions();
+    moveEnemies();
 
 
 /*
@@ -577,17 +592,19 @@ int main(){
     
     Pokitto::Core::update(); // needed first to setup IRQ that I will 'borrow' for my own sound.
     playRandomTune();
+
+    // set hardware volume quite low
+    SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
+    //if(myVolume>64){myVolume=64;}
+    //if(myVolume<0){myVolume=0;}
+    swvolpot.write(0x5e, myVolume);
+            
     
     while( PC::isRunning() ){
         
         updateStream();
         if(frameSkip==0){
             if( !PC::update() ) continue;
-            
-            //SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
-            //swvolpot.write(0x5e,myVolume);
-            //if(myVolume>64){myVolume=64;}
-            //if(myVolume<0){myVolume=0;}
             
         }else{
             PC::update(0); // don't update screen.
@@ -608,12 +625,16 @@ int main(){
         updateButtons(); // update buttons
         fpsCounter++;
 
-        char tempText[100];
+        char tempText[32];
+        //sprintf(tempText,"Col:%d",checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.lowerBound+2));
+        sprintf(tempText,"%d",((bg.numRed+bg.numGreen+bg.numBlue)*(bg.countRed+bg.countGreen+bg.countBlue))/100);
+        myPrint(0,16,tempText);
+
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,160,tempText);
 
-        sprintf(tempText,"speed:%d",player.speed);
-        myPrint(0,152,tempText);
+        //sprintf(tempText,"speed:%d",player.speed);
+        //myPrint(0,152,tempText);
 
         if(PC::getTime() >= lastMillis+1000){
             lastMillis = PC::getTime();

@@ -228,15 +228,13 @@ inline void audioTimer(void){
         }
         currentBuffer = audioOffset/audioBufferSize;
 
- 	    Chip_TIMER_ClearMatch(LPC_TIMER32_0, 1);
+    	Chip_TIMER_ClearMatch(LPC_TIMER32_0, 1);
     }
 }
 
 
 // timer init stolen directly from Pokittolib
 void initTimer(uint32_t sampleRate){
-//    enableDAC();
-    
     /* Initialize 32-bit timer 0 clock */
 	Chip_TIMER_Init(LPC_TIMER32_0);
     /* Timer rate is system clock rate */
@@ -248,16 +246,16 @@ void initTimer(uint32_t sampleRate){
     /* Setup 32-bit timer's duration (32-bit match time) */
 	Chip_TIMER_SetMatch(LPC_TIMER32_0, 1, (timerFreq / sampleRate));
 	/* Setup both timers to restart when match occurs */
-	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER32_0, 1);
+	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER32_1, 1);
 	/* Start both timers */
 	Chip_TIMER_Enable(LPC_TIMER32_0);
+    #define my_TIMER_IRQn 18
 	/* Clear both timers of any pending interrupts */
-	#define TIMER_32_0_IRQn 18
-	NVIC_ClearPendingIRQ((IRQn_Type)TIMER_32_0_IRQn);
+	NVIC_ClearPendingIRQ((IRQn_Type)my_TIMER_IRQn);
     /* Redirect IRQ vector - Jonne*/
-    NVIC_SetVector((IRQn_Type)TIMER_32_0_IRQn, (uint32_t)&audioTimer);
+    NVIC_SetVector((IRQn_Type)my_TIMER_IRQn, (uint32_t)&audioTimer);
 	/* Enable both timer interrupts */
-	NVIC_EnableIRQ((IRQn_Type)TIMER_32_0_IRQn);
+	NVIC_EnableIRQ((IRQn_Type)my_TIMER_IRQn);
 }
 
 void startSong(const char* filename){

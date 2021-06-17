@@ -137,52 +137,20 @@ void loadLevel(int levNum){
 
     initMap();
 
+
     // hotswap the level data    
     levelData = LevelData::load(levelTilename); 
-
     uint16_t scenerySize = (*reinterpret_cast<const uint16_t*>(&levelData[paletteSize]))*2;
-
     midmap = reinterpret_cast<const uint16_t*>(levelData + paletteSize +2);
     tiles = &levelData[paletteSize + scenerySize + 8];
-    
     uint16_t tilesOffset = *reinterpret_cast<const uint16_t*>(&levelData[paletteSize + scenerySize +6]);
-    
     collisionTile = &levelData[paletteSize + scenerySize + 8 + tilesOffset];
-
     reSaturate(0,0,0); // load palette at 100% saturation
-
     // load 16 colour sprite palette into 240+
     for(int t=0; t<16; t++){
         Pokitto::Display::palette[t+240] = color_sprite_pal[t];
     }
-/*
-    ser.printf("\r\n\r\n\r\n");
-    ser.printf("levelData.....0x%08X\r\n",levelData);
-    ser.printf("scenerySize...0x%08X\r\n",scenerySize);
-    ser.printf("tilesOffset...0x%08X\r\n",tilesOffset);
-    ser.printf("midmap........0x%08X\r\n",midmap);
-    ser.printf("tiles.........0x%08X\r\n",tiles);
-    ser.printf("collisionTile.0x%08X\r\n",collisionTile);
-    ser.printf("\r\n");
-    ser.printf("midMap Width %d\r\n",midmap[0]);
-    ser.printf("midMap Height %d\r\n",midmap[1]);
-    
-    ser.printf("\r\n\r\n\r\n");
-*/
-/*
-    int x1=0;
-    for(int t=0; t<1024; t++){
-        printf("0x%02d,",(levelData[t]>> 10)&31);
-        x1++;
-        if(x1==16){
-            x1=0;
-            printf("\r\n");
-        }
-        
-    }
-*/
 
-    
     uint16_t mapSize[2];
     File levfile;
     if(levfile.openRO(levelFilename))
@@ -204,24 +172,30 @@ void loadLevel(int levNum){
     
     int x=0;
     int y=0;
+    //int c=0;
+    //tileType[0]=0;
+
+    player.startX = 0;
+    player.startY = 0;
+
     for(int t=0; t<(mapWidth*mapHeight); t++){
         uint16_t curTile; // each tile is represented by 16bit, with the collision info being here -> 0111110000000000
         levfile.read(&curTile, sizeof(curTile));
-        x++;
         if(x==mapWidth){x=0; y++;}
 
         if(x<20 && y==0){
-            tileType[t]=((curTile >> 10)&31);
+            tileType[x]=((curTile >> 10)&31);
         }
 
 
-        if(y>=2){ // skip first line as it has control blocks for numbering
+        if(y>1){ // skip first line as it has control blocks for numbering
+
             // as the collision tile is 0111110000000000, then we must >>10 &31 to get the tile number
             int tl = ((curTile >> 10)&31);
-            if(tl == tileType[2]){ // 3 = start position
-                    player.startX = (x*8)<<8;
-                    player.startY = (y*8)<<8;
-                    player.frame=0;
+            if(tl == tileType[3]){ // 3 = start position
+                player.startX = (x*8)<<8;
+                player.startY = (y*8)<<8;
+                player.frame=0;
             }
             if(tl == tileType[4]){ // 4 = red gem
                     bg.numRed++;
@@ -253,46 +227,39 @@ void loadLevel(int levNum){
                     items[maxItems].type = ((curTile >> 10)&31)-3; // gem
                     maxItems++;
             }
+            
             if(tl == tileType[7]){ // 7 = Keith - the first enemy
-                    player.startX = (x*8)<<8;
-                    player.startY = (y*8)<<8;
                     enemy[maxEnemies].x = (x-1)*8;
                     enemy[maxEnemies].y = (y*8)+2;
+                    enemy[maxEnemies].offy = 0;
                     enemy[maxEnemies].type = 1; // 0 = dead?
                     enemy[maxEnemies].numFrames = 4;
+                    enemy[maxEnemies].speed = 6;
                     maxEnemies++;
             }
             if(tl == tileType[8]){ // 8 = Tom - the second enemy
-                    player.startX = (x*8)<<8;
-                    player.startY = (y*8)<<8;
                     enemy[maxEnemies].x = (x-1)*8;
                     enemy[maxEnemies].y = (y*8)+2;
+                    enemy[maxEnemies].offy = 0;
                     enemy[maxEnemies].type = 2; // 0 = dead?
                     enemy[maxEnemies].numFrames = 4;
+                    enemy[maxEnemies].speed = 6;
                     maxEnemies++;
             }
             if(tl == tileType[9]){ // 9 = Bird - the third enemy
-                    player.startX = (x*8)<<8;
-                    player.startY = (y*8)<<8;
                     enemy[maxEnemies].x = (x-1)*8;
                     enemy[maxEnemies].y = (y*8)+2;
+                    enemy[maxEnemies].offy = -24;
                     enemy[maxEnemies].type = 3; // 0 = dead?
-                    enemy[maxEnemies].numFrames = 6;
+                    enemy[maxEnemies].numFrames = 4;
+                    enemy[maxEnemies].speed = 8;
                     maxEnemies++;
             }
-            if(tl == tileType[10]){ // 8 = Keith - the first enemy
-                    player.startX = (x*8)<<8;
-                    player.startY = (y*8)<<8;
-                    enemy[maxEnemies].x = (x-1)*8;
-                    enemy[maxEnemies].y = (y*8)+2;
-                    enemy[maxEnemies].type = 1; // 0 = dead?
-                    maxEnemies++;
-            }
-            
+
         }// y>0
+        x++;
     }
     levfile.close();
-    //waitButton();
 
     bg.redPercent = 1.0/bg.numRed;
     bg.greenPercent = 1.0/bg.numGreen;
@@ -303,7 +270,6 @@ void loadLevel(int levNum){
 
     player.x = player.startX;
     player.y = player.startY;
-
 
     // update the screen before actually playing the level or else!!!
     bg.mapX = (player.x>>8)-110;
@@ -327,10 +293,5 @@ void loadLevel(int levNum){
 
     bg.oldMapX = player.x-28160;
     bg.oldMapY = player.y-22528;
-
-
-    //printf("px:%d py:%d\n",player.startX>>8,player.startY>>8);
-    //printf("px:%d py:%d\n",player.x>>8,player.y>>8);
-
 
 }

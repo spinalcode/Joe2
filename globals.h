@@ -1,6 +1,6 @@
 
 //File bgmFile;
-int myVolume = 0;
+int myVolume = 5;
 
 #define MAXSTEP 64
 #define MAXSPEED 512
@@ -39,7 +39,10 @@ uint32_t layerNumber=0;
 uint8_t tileType[20]; // to be read from the first row in the collision map
 #define NOTHING 0
 int SOLID = 1;
-int JUMPTHROUGH = 3;
+int JUMPTHROUGH = 2;
+int DEATHCOLOUR = 10;
+
+const uint8_t satRamp[]={0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,8,8,8,9,9,9,9,10,10,10,11,11,12,12,12,13,13,14,14,15,16,17,17,18,19,20,21,22,23,25,27,29,31,33,36,40,43,48,53,59,67,75,94,99,100};
 
 struct BACKGROUND_DATA {
     int windowX; // position within the map window
@@ -113,6 +116,7 @@ const uint8_t gemFrame[]={0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7};
 struct ENEMY_DATA {
     int x;  // x postition
     int y;  // y position
+    int offy=0;
     int vy; // for jumping
     bool flip; // flip sprite
 
