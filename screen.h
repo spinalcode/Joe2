@@ -64,31 +64,32 @@ void doorFill(std::uint8_t* line, std::uint32_t y, bool skip){
         return;
     }
 
-    // render the door sprite 1 line behind the rendering line so it isn't overwritten by the current data.
+    int offset = exitDoor.y-bg.mapY+(47-y);
+    //int s=0;
+    uint16_t tempPal[256];
+    for(int t=0; t<220; t++){
+        //tempPal[t] = gamePalette.rgb[line[t]];
+        //Pokitto::Display::palette[t] = gamePalette.rgb[line[t]];
+        //line[t]=t;
+        auto colorIndex = line[t];
+        Pokitto::Display::palette[t] = gamePalette.rgb[colorIndex];
+        line[t]=t;
+    }
+
+    int s=0;
     if(exitDoor.x > bg.mapX && exitDoor.x < bg.mapX+220){
     	if(bg.mapY+y>=exitDoor.y && bg.mapY+y<exitDoor.y+48){
-        	write_command(0x20);  // Horizontal DRAM Address
-            write_data(y-1);  // current line
-            write_command(0x21);  // Vertical DRAM Address
-            //write_data(0); // x position
-            write_data(exitDoor.x-bg.mapX); // x position
-            write_command(0x22); // write data to DRAM
-            CLR_CS_SET_CD_RD_WR;
             int offset = exitDoor.y-bg.mapY+(47-y);
-            for(int t=0; t<32; t++){
-                setup_data_16(exitDoor.tempDoorSprite[t+(offset*32)]);
-                //setup_data_16(random(0xffff)); // tempDoorSprite[t]
-                CLR_WR;SET_WR;
+    	    // add the 16bit sprite
+            int currentPix = (exitDoor.x-bg.mapX)+s;
+            if(currentPix<220 && currentPix >=0){
+                Pokitto::Display::palette[currentPix] = exitDoor.tempDoorSprite[s+(offset*32)];
+                s++;
             }
-            // return screen coordinates back to normal
-        	write_command(0x20);  // Horizontal DRAM Address
-            write_data(y);  // current line
-            write_command(0x21);  // Vertical DRAM Address
-            write_data(0); // x position
-            write_command(0x22); // write data to DRAM
-            CLR_CS_SET_CD_RD_WR;
-    	}
+        }
     }
+
+
     return;
 }
 
@@ -311,16 +312,19 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
     bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
     bgHalfTileLine2(); 
 
-    if(exitDoor.x > bg.mapX && exitDoor.x < bg.mapX+220){
-    	if(bg.mapY+y>=exitDoor.y && bg.mapY+y<exitDoor.y+48){
+//    if(exitDoor.x > bg.mapX && exitDoor.x < bg.mapX+220){
+//    	if(bg.mapY+y>=exitDoor.y && bg.mapY+y<exitDoor.y+48){
+            // current line in door sprite
+/*
             int offset = exitDoor.y-bg.mapY+(47-y);
-            int s=0;
+            //int s=0;
     	    uint16_t tempPal[256];
     	    for(int t=0; t<220; t++){
     	        //tempPal[t] = gamePalette.rgb[line[t]];
     	        Pokitto::Display::palette[t] = gamePalette.rgb[line[t]];
     	        line[t]=t;
     	    }
+*/
     	    /*
     	    // add the 16bit sprite
             int currentPix = (exitDoor.x-bg.mapX)+s;
@@ -367,8 +371,8 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
             CLR_CS_SET_CD_RD_WR;
 */
 
-    	}
-    }
+//    	}
+//    }
 
 }
 

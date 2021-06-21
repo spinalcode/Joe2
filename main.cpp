@@ -562,7 +562,7 @@ void titleScreen(){
     
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
         Pokitto::Display::lineFillers[1] = myBGFiller2; // background map layer
-        //Pokitto::Display::lineFillers[3] = doorFill; // background map layer
+        Pokitto::Display::lineFillers[3] = doorFill; // background map layer
         // clear screen to black
         for(int y=0; y<176; y++){
             flushLine(emptyPalette, blankLine);
@@ -660,7 +660,7 @@ int main(){
         myPrint(0,160,tempText);
         
         
-        sprintf(tempText,"Y:%d",exitDoor.y-bg.mapY-104);
+        sprintf(tempText,"Pal:%d",PALETTE_SIZE);
         myPrint(0,152,tempText);
 
         if(PC::getTime() >= lastMillis+1000){
