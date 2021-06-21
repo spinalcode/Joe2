@@ -6,6 +6,8 @@ int myVolume = 5;
 #define MAXSPEED 512
 #define PLAYER_SPEED 512
 
+int myCounter=0;
+
 bool clearScreen=false;
 long int myDelay;
 long int tempTime;
@@ -32,6 +34,19 @@ int lastCollectedY=0;
 const uint16_t emptyPalette[]={0};
 const uint8_t blankLine[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
+
+struct DOOR_DATA {
+    int x;
+    int y;
+    bool visible;
+    //uint8_t speed = 4;
+    uint8_t loadDoorCounter=0;
+    uint16_t tempDoorSprite[1536];
+    uint8_t frame = 0;
+    File doorFile;
+} exitDoor;
+
+
 char levelFilename[32];
 char levelTilename[32];
 uint32_t layerNumber=0;
@@ -41,8 +56,10 @@ uint8_t tileType[20]; // to be read from the first row in the collision map
 int SOLID = 1;
 int JUMPTHROUGH = 2;
 int DEATHCOLOUR = 10;
+int DOORCOLOUR = 11;
 
-const uint8_t satRamp[]={0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,8,8,8,9,9,9,9,10,10,10,11,11,12,12,12,13,13,14,14,15,16,17,17,18,19,20,21,22,23,25,27,29,31,33,36,40,43,48,53,59,67,75,94,99,100};
+//const uint8_t satRamp[]={0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,8,8,8,9,9,9,9,10,10,10,11,11,12,12,12,13,13,14,14,15,16,17,17,18,19,20,21,22,23,25,27,29,31,33,36,40,43,48,53,59,67,75,94,96,99,100,100,100,100}; // couple of extra 100% just incase the math goes wonky.
+const uint8_t satRamp[]={0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,5,5,6,6,6,7,7,8,8,9,9,10,11,11,12,13,14,15,15,16,17,18,19,20,21,22,23,25,26,27,28,30,31,32,34,35,37,39,40,42,44,45,47,48,51,53,54,57,58,60,62,64,67,68,71,72,75,76,79,81,82,85,87,90,92,93,95,96,98,100};
 
 struct BACKGROUND_DATA {
     int windowX; // position within the map window
@@ -142,6 +159,8 @@ struct ANIMATION_DATA {
     int startX;
     int startY;
     int frame;
+    int type;
+    uint8_t speed = 1;
     bool used=false;
     int frameCount=0;
 } animSprite[20];

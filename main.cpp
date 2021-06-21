@@ -75,6 +75,7 @@ void startAnimation(int x, int y, int itemType){
     for(int t=20; t; t--){
         if(animSprite[t].used==false){useSprite=t;}
     }
+    animSprite[useSprite].type=itemType;
     animSprite[useSprite].x = x;
     animSprite[useSprite].y = y;
     animSprite[useSprite].startX = x;
@@ -137,10 +138,19 @@ void renderSprites(){
     // animating sprites - items etc.
     for(int t=0; t<20; t++){
         if(animSprite[t].used==true){
-            Pokitto::Display::drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].frame-1)*(sizeof(gemFrame)/2) + gemFrame[0]],0,0,240);
-            animSprite[t].x = animSprite[t].startX-easeInOut(animSprite[t].frameCount, 0, animSprite[t].startX, 10);
-            animSprite[t].y = animSprite[t].startY-easeInOut(animSprite[t].frameCount, -16, animSprite[t].startY+16, 10);
-            if(++animSprite[t].frameCount==20){animSprite[t].used = false;}else{HUD_gemTimer = HUD_gemTimerStart;}
+            animSprite[t].frame++;
+            if(animSprite[t].frame >= sizeof(gemFrame)*animSprite[t].speed){animSprite[t].frame=0;}
+            int flipme=0;
+            int frame = (animSprite[t].frame/animSprite[t].speed);
+            if(frame >= sizeof(gemFrame)/2){
+                flipme=1;
+            }
+            //Pokitto::Display::drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].startFrame-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
+            Pokitto::Display::drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
+
+            animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, 0, animSprite[t].startX, 15));
+            animSprite[t].y = (animSprite[t].startY-easeInOut(animSprite[t].frameCount, 16, animSprite[t].startY-16, 15))+16;
+            if(++animSprite[t].frameCount==15){animSprite[t].used = false;}else{HUD_gemTimer = HUD_gemTimerStart;}
         }
     }
 
@@ -158,6 +168,10 @@ void renderSprites(){
         snprintf(tempText,sizeof(tempText),"%d/%d",bg.countRed+bg.countGreen+bg.countBlue, bg.numRed+bg.numGreen+bg.numBlue);
         myPrint(20,gemY-4,tempText);
     }
+
+    //Pokitto::Display::drawSprite(0, 32, door[myCounter], 0 ,0,240);
+    //if(++myCounter==30)myCounter=0;
+
 
 }
 
@@ -251,9 +265,7 @@ void moveEnemies(){
             }
         } // not dead
     }
-    
 }
-
 
 void gameLogic(){
 
@@ -269,7 +281,6 @@ void gameLogic(){
     //if(_Up_But[NEW]){ myVolume++;}
     //if(_Down_But[NEW]){ myVolume--;}
 
-
     if(_Left_But[NEW]){ player.flip = 1;}
     if(_Right_But[NEW]){ player.flip = 0;}
 
@@ -280,12 +291,14 @@ void gameLogic(){
 
 //    if(_B_But[HELD] && (_Left_But[HELD] || _Right_But[HELD])){player.speed +=8;}else{player.speed -=16;}
 
+    if(_B_But[HELD]){player.speed =PLAYER_SPEED*1.5;}else{player.speed = PLAYER_SPEED;}
+
     //player.x += (_Right_But[HELD] - _Left_But[HELD]) * MAXSPEED;
     if(_Right_But[HELD]){
         while(rightCollision(player.x>>8, player.y>>8)==SOLID && rightCollision((player.x>>8)+1, (player.y>>8)-8)==SOLID){
             player.x -= 128;
         }
-        player.x += PLAYER_SPEED;
+        player.x += player.speed;
         if(frameSkip==0){player.step ++;}
     }
 
@@ -293,7 +306,7 @@ void gameLogic(){
         while(leftCollision(player.x>>8, player.y>>8)==SOLID && leftCollision((player.x>>8)-1, (player.y>>8)-8)==SOLID){
             player.x += 128;
         }
-        player.x -= PLAYER_SPEED;
+        player.x -= player.speed;
         if(frameSkip==0){player.step ++;}
     }
 
@@ -483,6 +496,15 @@ void gameLogic(){
     checkItemCollisions();
     moveEnemies();
 
+    
+    if(++exitDoor.loadDoorCounter==4){
+        exitDoor.loadDoorCounter=0;
+        if(exitDoor.doorFile.openRO("/joe2/door.raw")){
+            exitDoor.doorFile.seek(64*48*exitDoor.frame);
+            if(++exitDoor.frame>=30)exitDoor.frame=0;
+            exitDoor.doorFile.read(&exitDoor.tempDoorSprite[0], 3072); // 32*48*2
+        }
+    }
 
 /*
     Pokitto::Display::drawSprite(0, 32, color_sprite[sprite_anim_frame/2],0,0,240);
@@ -540,6 +562,7 @@ void titleScreen(){
     
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
         Pokitto::Display::lineFillers[1] = myBGFiller2; // background map layer
+        //Pokitto::Display::lineFillers[3] = doorFill; // background map layer
         // clear screen to black
         for(int y=0; y<176; y++){
             flushLine(emptyPalette, blankLine);
@@ -629,21 +652,16 @@ int main(){
         fpsCounter++;
 
         char tempText[32];
-        //sprintf(tempText,"Col:%d",checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.lowerBound+2));
 
-        float bigNum = bg.numRed+bg.numGreen+bg.numBlue;
-        float littleNum = bg.countRed+bg.countGreen+bg.countBlue;
-        float tempSat = littleNum/bigNum;
-        int percent = tempSat*100;
-        int satAmount = satRamp[percent];
-        sprintf(tempText,"%d,%d,%d",percent,satAmount,sizeof(satRamp));
-        myPrint(0,32,tempText);
+        //sprintf(tempText,"%d",((bg.numRed+bg.numGreen+bg.numBlue)*(bg.countRed+bg.countGreen+bg.countBlue))/100);
+        //myPrint(0,16,tempText);
 
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,160,tempText);
-
-        //sprintf(tempText,"speed:%d",player.speed);
-        //myPrint(0,152,tempText);
+        
+        
+        sprintf(tempText,"Y:%d",exitDoor.y-bg.mapY-104);
+        myPrint(0,152,tempText);
 
         if(PC::getTime() >= lastMillis+1000){
             lastMillis = PC::getTime();

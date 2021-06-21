@@ -10,6 +10,89 @@
     |___|__||_____|__|__|_____||_____|__|     |_______||____|__| |_____|_____|__|__|
 
 */
+static inline void setup_data_16(uint16_t data)
+{
+    SET_MASK_P2;
+    LPC_GPIO_PORT->MPIN[2] = (data<<3); // write bits to port
+    CLR_MASK_P2;
+}
+
+inline void write_command_16(uint16_t data)
+{
+   CLR_CS; // select lcd
+   CLR_CD; // clear CD = command
+   SET_RD; // RD high, do not read
+   setup_data_16(data); // function that inputs the data into the relevant bus lines
+   CLR_WR_SLOW;  // WR low
+   SET_WR;  // WR low, then high = write strobe
+   SET_CS; // de-select lcd
+}
+
+/**************************************************************************/
+/*!
+    @brief  Write data to the lcd, 16-bit bus
+*/
+/**************************************************************************/
+inline void write_data_16(uint16_t data)
+{
+   CLR_CS;
+   SET_CD;
+   SET_RD;
+   setup_data_16(data);
+   CLR_WR;
+   SET_WR;
+   SET_CS;
+}
+
+
+void directPixel(int16_t x, int16_t y, uint16_t* color){
+	
+	write_command(0x20);  // Horizontal DRAM Address
+    write_data(y);  // 0
+    write_command(0x21);  // Vertical DRAM Address
+    write_data(x);
+    write_command(0x22); // write data to DRAM
+    CLR_CS_SET_CD_RD_WR;
+    setup_data_16(0xFFFF);
+    CLR_WR;SET_WR;
+    
+}
+
+
+void doorFill(std::uint8_t* line, std::uint32_t y, bool skip){
+    if(skip){
+        return;
+    }
+
+    // render the door sprite 1 line behind the rendering line so it isn't overwritten by the current data.
+    if(exitDoor.x > bg.mapX && exitDoor.x < bg.mapX+220){
+    	if(bg.mapY+y>=exitDoor.y && bg.mapY+y<exitDoor.y+48){
+        	write_command(0x20);  // Horizontal DRAM Address
+            write_data(y-1);  // current line
+            write_command(0x21);  // Vertical DRAM Address
+            //write_data(0); // x position
+            write_data(exitDoor.x-bg.mapX); // x position
+            write_command(0x22); // write data to DRAM
+            CLR_CS_SET_CD_RD_WR;
+            int offset = exitDoor.y-bg.mapY+(47-y);
+            for(int t=0; t<32; t++){
+                setup_data_16(exitDoor.tempDoorSprite[t+(offset*32)]);
+                //setup_data_16(random(0xffff)); // tempDoorSprite[t]
+                CLR_WR;SET_WR;
+            }
+            // return screen coordinates back to normal
+        	write_command(0x20);  // Horizontal DRAM Address
+            write_data(y);  // current line
+            write_command(0x21);  // Vertical DRAM Address
+            write_data(0); // x position
+            write_command(0x22); // write data to DRAM
+            CLR_CS_SET_CD_RD_WR;
+    	}
+    }
+    return;
+}
+
+
 
 inline void wiggleFill(std::uint8_t* line, std::uint32_t y, bool skip){
 /*
@@ -228,7 +311,64 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
     bgTileLine2(); bgTileLine2(); bgTileLine2(); bgTileLine2();
     bgHalfTileLine2(); 
 
-    if(clearScreen==true) memset(&line[0], 10, 220);
+    if(exitDoor.x > bg.mapX && exitDoor.x < bg.mapX+220){
+    	if(bg.mapY+y>=exitDoor.y && bg.mapY+y<exitDoor.y+48){
+            int offset = exitDoor.y-bg.mapY+(47-y);
+            int s=0;
+    	    uint16_t tempPal[256];
+    	    for(int t=0; t<220; t++){
+    	        //tempPal[t] = gamePalette.rgb[line[t]];
+    	        Pokitto::Display::palette[t] = gamePalette.rgb[line[t]];
+    	        line[t]=t;
+    	    }
+    	    /*
+    	    // add the 16bit sprite
+            int currentPix = (exitDoor.x-bg.mapX)+s;
+            if(currentPix<220 && currentPix >=0){
+                gamePalette.rgb[currentPix] = exitDoor.tempDoorSprite[s+(offset*32)];
+                s++;
+            }
+            */
+            //Pokitto::Display::load565Palette(tempPal); // gamePalette.rgb
+
+
+    	        /*
+    	        if(tempPal[t]==0 && s<32){
+    	            int currentPix = (exitDoor.x-bg.mapX)+s;
+    	            if(currentPix<220 && currentPix >=0){
+    	                line[currentPix] = t;
+    	                gamePalette.rgb[t] = exitDoor.tempDoorSprite[s+(offset*32)];
+    	                s++;
+    	            }
+    	            //tempPal[t] = exitDoor.tempDoorSprite[s+(offset*32)];    
+    	        }
+    	        */
+
+/*    	    
+        	write_command(0x20);  // Horizontal DRAM Address
+            write_data(y-1);  // current line
+            write_command(0x21);  // Vertical DRAM Address
+            //write_data(0); // x position
+            write_data(exitDoor.x-bg.mapX); // x position
+            write_command(0x22); // write data to DRAM
+            CLR_CS_SET_CD_RD_WR;
+            int offset = exitDoor.y-bg.mapY+(47-(y-1));
+            for(int t=0; t<32; t++){
+                setup_data_16(exitDoor.tempDoorSprite[t+(offset*32)]);
+                //setup_data_16(random(0xffff)); // tempDoorSprite[t]
+                CLR_WR;SET_WR;
+            }
+            // return screen coordinates back to normal
+        	write_command(0x20);  // Horizontal DRAM Address
+            write_data(y);  // current line
+            write_command(0x21);  // Vertical DRAM Address
+            write_data(0); // x position
+            write_command(0x22); // write data to DRAM
+            CLR_CS_SET_CD_RD_WR;
+*/
+
+    	}
+    }
 
 }
 

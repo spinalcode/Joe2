@@ -177,6 +177,7 @@ void loadLevel(int levNum){
 
     player.startX = 0;
     player.startY = 0;
+    bool doorLoaded = false;
 
     for(int t=0; t<(mapWidth*mapHeight); t++){
         uint16_t curTile; // each tile is represented by 16bit, with the collision info being here -> 0111110000000000
@@ -254,6 +255,16 @@ void loadLevel(int levNum){
                     enemy[maxEnemies].numFrames = 4;
                     enemy[maxEnemies].speed = 8;
                     maxEnemies++;
+            }
+            if(tl == tileType[11]){ // 11 = Level Complete Door
+                if(doorLoaded==false){
+                    doorLoaded = true;
+                    exitDoor.x = x*8;
+                    exitDoor.y = y*8;
+                    exitDoor.frame = 0;
+                    exitDoor.visible = true;
+                    printf("Door at %d,%d\n",exitDoor.x,exitDoor.y);
+                }
             }
 
         }// y>0
