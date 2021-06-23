@@ -21,6 +21,7 @@ uint8_t line[255];
 const uint16_t palette2[] = {0};
 bool interlaceScreen = false;
 bool mustDraw=true;
+uint16_t pal[256];
 
 long int timerCounter=0;
 
@@ -34,12 +35,11 @@ int lastCollectedY=0;
 const uint16_t emptyPalette[]={0};
 const uint8_t blankLine[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-
 struct DOOR_DATA {
     int x;
     int y;
     bool visible;
-    //uint8_t speed = 4;
+    uint8_t speed = 6;
     uint8_t loadDoorCounter=0;
     uint16_t tempDoorSprite[1536];
     uint8_t frame = 0;
@@ -185,6 +185,7 @@ int gameMode=0;
 
 struct PALETTE_DATA {
     uint16_t rgb[256];
+    uint16_t hpal[100]; // I think only 91 for the hline thing
 } gamePalette;
 
 double saturation = 0;

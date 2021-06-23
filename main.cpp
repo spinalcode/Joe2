@@ -33,6 +33,18 @@ void myPrint(char x, char y, const char* text) {
   }
 }
 
+void make_pal(void){
+	int a,s,r,g,b;
+	for(a=0; a<=63; a++){
+		s = 0; 	r = a; 		g = 63-a;	b = 0;		pal[a+s] = Pokitto::Core::display.RGBto565(r*4,g*4,b*4);
+		s = 64; r = 63-a;	g = 0;		b = a; 		pal[a+s] = Pokitto::Core::display.RGBto565(r*4,g*4,b*4);
+		s = 128; r = 0;	 	g = 0;		b = 63-a;	pal[a+s] = Pokitto::Core::display.RGBto565(r*4,g*4,b*4);
+		s = 192; r = 0;		g = a;		b = 0;	 	pal[a+s] = Pokitto::Core::display.RGBto565(r*4,g*4,b*4);
+	}
+    Pokitto::Display::load565Palette(pal);
+}
+
+
 void setFPS(int fps){
   myDelay = 1000 / fps;
 }
@@ -496,20 +508,24 @@ void gameLogic(){
     checkItemCollisions();
     moveEnemies();
 
-    
-    if(++exitDoor.loadDoorCounter==4){
+/*    
+    if(++exitDoor.loadDoorCounter==exitDoor.speed){
         exitDoor.loadDoorCounter=0;
-        if(exitDoor.doorFile.openRO("/joe2/door.raw")){
+        if(exitDoor.doorFile.openRO("/joe2/door1.raw")){
             exitDoor.doorFile.seek(64*48*exitDoor.frame);
             if(++exitDoor.frame>=30)exitDoor.frame=0;
             exitDoor.doorFile.read(&exitDoor.tempDoorSprite[0], 3072); // 32*48*2
         }
     }
-
+*/
 /*
     Pokitto::Display::drawSprite(0, 32, color_sprite[sprite_anim_frame/2],0,0,240);
     if(++sprite_anim_frame==16)sprite_anim_frame=0;
 */
+
+//    Pokitto::Display::drawSprite(16, 16, sprite_door);
+    
+    
 }
 
 
@@ -562,7 +578,7 @@ void titleScreen(){
     
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
         Pokitto::Display::lineFillers[1] = myBGFiller2; // background map layer
-        Pokitto::Display::lineFillers[3] = doorFill; // background map layer
+        Pokitto::Display::lineFillers[4] = doorFill; // background map layer
         // clear screen to black
         for(int y=0; y<176; y++){
             flushLine(emptyPalette, blankLine);
@@ -590,7 +606,7 @@ int main(){
 
     PC::begin();
 
-    PC::setFrameRate(25);
+    //PC::setFrameRate(60);
 
     PD::invisiblecolor = 0;
     PD::adjustCharStep = 0;
@@ -599,6 +615,7 @@ int main(){
     // This can only be done once, as were swapping layers around
     Pokitto::Display::lineFillers[2] = Pokitto::Display::lineFillers[1]; // sprite layer
 
+    make_pal();
 
     //bgmFile.openRO("/joe2/C_8000.pcm");
     //Audio::play(bgmFile, bgmFile.size());
@@ -669,6 +686,14 @@ int main(){
             fpsCounter = 0;
         }
 
+
+        // rotate door palette
+        uint16_t temp = pal[0];
+        for(int t=0; t<255; t++){
+            pal[t] = pal[t+1];
+        }
+        pal[255] = temp;
+        
     }
     
     return 0;

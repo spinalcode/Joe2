@@ -17,11 +17,11 @@
 //#define PROJ_AUD_FREQ      8000
 
 
-#define PROJ_MAX_SPRITES 64
+#define PROJ_MAX_SPRITES 128
 // setting the tile size larger than the screen results in a tiny map
 #define PROJ_TILE_H 1024
 #define PROJ_TILE_W 1024
 #define PROJ_DEVELOPER_MODE 0
 #define MAX_TILE_COUNT 16
-#define PROJ_LINE_FILLERS TAS::NOPFiller, TAS::SpriteFiller, TAS::NOPFiller, TAS::NOPFiller
+#define PROJ_LINE_FILLERS TAS::NOPFiller, TAS::SpriteFiller, TAS::NOPFiller, TAS::NOPFiller, TAS::NOPFiller
 
