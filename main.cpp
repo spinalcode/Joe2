@@ -1,4 +1,3 @@
-#include <Pokitto.h>
 #include <LibHotswap>
 #include <File>
 #include "PokittoCookie.h"
@@ -23,13 +22,26 @@ void waitButton(){
     while(!_A_But[NEW]) updateButtons();
 }
 
+void drawSprite(int x, int y, const uint8_t *imageData,const uint16_t *paletteData, bool hFlip = false){
+    //if(x+imageData[0]<0 || x>LCDWIDTH || y+imageData[1]<0 || y>LCDHEIGHT) return;
+    
+    sprites[spriteCount].x = x;
+    sprites[spriteCount].y = y;
+    sprites[spriteCount].imageData = imageData;
+    sprites[spriteCount].paletteData = paletteData;
+    sprites[spriteCount].active = true;
+    sprites[spriteCount].hFlip = hFlip;
+    spriteCount++;
+}
+
+
 // print text
 void myPrint(char x, char y, const char* text) {
   uint8_t numChars = strlen(text);
   uint8_t x1 = 0;//2+x+28*y;
   for (uint8_t t = 0; t < numChars; t++) {
     uint8_t character = text[t] - 32;
-    Pokitto::Display::drawSprite(x+((x1++)*8), y, font88[character]);
+    drawSprite(x+((x1++)*8), y, font88[character], font88_pal);
   }
 }
 
@@ -80,9 +92,7 @@ int rightCollision(int x, int y){
 
 
 void startAnimation(int x, int y, int itemType){
-
     //printf("x:%d y:%d\n",x,y);
-
     int useSprite=0;
     for(int t=20; t; t--){
         if(animSprite[t].used==false){useSprite=t;}
@@ -97,8 +107,11 @@ void startAnimation(int x, int y, int itemType){
     animSprite[useSprite].frameCount = 1;
 }
 
-
 void renderSprites(){
+    
+    
+    drawSprite(exitDoor.x-bg.mapX, exitDoor.y-bg.mapY, sprite_door, pal);
+    
     
     //enemies
     for(int t=0; t<maxEnemies; t++){
@@ -109,13 +122,16 @@ void renderSprites(){
             int theY = enemy[t].y-bg.mapY;
             if(theX>-16 && theX<220 && theY>-16 && theY<176){
                 if(enemy[t].type==1){
-                    Pokitto::Display::drawSprite(theX, theY, enemy1[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                    //Pokitto::Display::drawSprite(theX, theY, enemy1[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                    drawSprite(theX, theY, enemy1[enemy[t].frame/enemy[t].speed], gamePalette.rgb, enemy[t].direction);
                 }
                 if(enemy[t].type==2){
-                    Pokitto::Display::drawSprite(theX, theY, enemy2[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                    //Pokitto::Display::drawSprite(theX, theY, enemy2[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                    drawSprite(theX, theY, enemy2[enemy[t].frame/enemy[t].speed], gamePalette.rgb, enemy[t].direction);
                 }
                 if(enemy[t].type==3){
-                    Pokitto::Display::drawSprite(theX, theY+enemy[t].offy, enemy3[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                    //Pokitto::Display::drawSprite(theX, theY+enemy[t].offy, enemy3[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
+                    drawSprite(theX, theY+enemy[t].offy, enemy3[enemy[t].frame/enemy[t].speed], gamePalette.rgb, enemy[t].direction);
                 }
             }
         } // not dead
@@ -127,25 +143,24 @@ void renderSprites(){
             items[t].frame++;
             if(items[t].frame >= sizeof(gemFrame)*items[t].speed){items[t].frame=0;}
             if(items[t].type!=0){
-                int flipme=0;
                 int frame = (items[t].frame/items[t].speed);
-                if(frame >= sizeof(gemFrame)/2){
-                    flipme=1;
-                }
-                
                 int theX = items[t].x-bg.mapX;
                 int theY = items[t].y-bg.mapY;
                 
                 if(theX>-16 && theX<220 && theY>-16 && theY<176){
-                    Pokitto::Display::drawSprite(theX, theY, gems[ (items[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
+                    //Pokitto::Display::drawSprite(theX, theY, gems[ (items[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
+                    drawSprite(theX, theY, gems[ (items[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]], &gamePalette.rgb[240]);
                 }
             }
         }
     }
     
     // player sprite
-    Pokitto::Display::drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[player.frame], 0, player.flip);
-    Pokitto::Display::drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], 0, player.flip);
+    //Pokitto::Display::drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[player.frame], 0, player.flip);
+    //Pokitto::Display::drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], 0, player.flip);
+
+    drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[player.frame], gamePalette.rgb, player.flip);
+    drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], gamePalette.rgb, player.flip);
 
     // animating sprites - items etc.
     for(int t=0; t<20; t++){
@@ -157,8 +172,8 @@ void renderSprites(){
             if(frame >= sizeof(gemFrame)/2){
                 flipme=1;
             }
-            //Pokitto::Display::drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].startFrame-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
-            Pokitto::Display::drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
+            //Pokitto::Display::drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
+            drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]], gamePalette.rgb+240);
 
             animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, 0, animSprite[t].startX, 15));
             animSprite[t].y = (animSprite[t].startY-easeInOut(animSprite[t].frameCount, 16, animSprite[t].startY-16, 15))+16;
@@ -172,7 +187,8 @@ void renderSprites(){
         HUD_gemTimer--;
         int gemY = HUD_gemTimer;
         if(gemY > 16)gemY=16;
-        Pokitto::Display::drawSprite(0, gemY-8, color_sprite[ gemFrame[HUD_gemFrameCount/3]], 0 ,0,240);
+        //Pokitto::Display::drawSprite(0, gemY-8, color_sprite[ gemFrame[HUD_gemFrameCount/3]], 0 ,0,240);
+        drawSprite(0, gemY-8, color_sprite[ gemFrame[HUD_gemFrameCount/3]], gamePalette.rgb+240);
         //if(HUD_gemTimer%2 == 0)
         HUD_gemFrameCount++;
         if(HUD_gemFrameCount>=24)HUD_gemFrameCount=0;
@@ -500,6 +516,7 @@ void gameLogic(){
         }
     }
 
+    sprites[0].imageData = player_sprite[player.frame];
 
     
     //f((player.y>>8)-bg.mapY>=204){gameMode = 0;}
@@ -578,14 +595,16 @@ void titleScreen(){
     
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
         Pokitto::Display::lineFillers[1] = myBGFiller2; // background map layer
-        Pokitto::Display::lineFillers[4] = doorFill; // background map layer
+        Pokitto::Display::lineFillers[2] = spriteFill; // sprite layer
         // clear screen to black
         for(int y=0; y<176; y++){
             flushLine(emptyPalette, blankLine);
         }
         // a little 'wide-screening' to remove 16 lines for higher frame rate
-        Pokitto::Display::setTASRowMask(0b0111'11111111'11111110);
-
+        Pokitto::Display::setTASRowMask(0b1111'11111111'11111111);
+        bg.screenTop=8;
+        bg.screenBottom=176-8;
+        
         mustDraw=true;
     }
 
@@ -641,8 +660,8 @@ int main(){
     //if(myVolume>64){myVolume=64;}
     //if(myVolume<0){myVolume=0;}
     swvolpot.write(0x5e, myVolume);
-            
-    
+
+
     while( PC::isRunning() ){
         
         updateStream();

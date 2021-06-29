@@ -35,13 +35,27 @@ int lastCollectedY=0;
 const uint16_t emptyPalette[]={0};
 const uint8_t blankLine[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
+// My own sprite renderer
+#define NUMSPRITES 128
+struct SPRITE_DATA {
+    int16_t x;  // x postition
+    int16_t y;  // y position
+    const uint8_t *imageData; // image data
+    const uint16_t *paletteData; // palette data
+    uint16_t offset; // tile render pixel offset
+    bool active;
+    bool hFlip;
+} sprites[NUMSPRITES];
+uint8_t spriteCount = 0;
+uint16_t scanLine[348];
+
+
 struct DOOR_DATA {
     int x;
     int y;
     bool visible;
     uint8_t speed = 6;
     uint8_t loadDoorCounter=0;
-    uint16_t tempDoorSprite[1536];
     uint8_t frame = 0;
     File doorFile;
 } exitDoor;
@@ -84,6 +98,8 @@ struct BACKGROUND_DATA {
     float redPercent;
     float greenPercent;
     float bluePercent;
+    uint8_t screenTop;
+    uint8_t screenBottom;
 } bg;
 
 struct PLAYER_DATA {

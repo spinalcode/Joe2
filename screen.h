@@ -11,48 +11,92 @@
 
 */
 
-void doorFill(std::uint8_t* line, std::uint32_t y, bool skip){
+void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
 
+    if(y==bg.screenBottom) spriteCount=0;
+
+    if(y<bg.screenTop || y>bg.screenBottom){
+        memset(&line[0],0,220);
+        Pokitto::Display::load565Palette(emptyPalette);
+        return;
+    }
+/*    
     if(skip){
         return;
     }
+*/
+    #define leftOffset 64
 
-    uint16_t tempPal[256];
-    auto lineP = &tempPal[0];
-    auto lineT = &line[0];
-    for(uint8_t t=0; t<220; t++){
-        uint16_t colorIndex = line[t];
-        *lineP++ = gamePalette.rgb[colorIndex]; // doesnt work
-        *lineT++ = t;
-    }
+    if(spriteCount>0){
 
+        for(uint8_t spriteIndex = spriteCount; spriteIndex>0; spriteIndex--){
+            auto & sprite = sprites[spriteIndex];
+            uint8_t spriteWidth = sprite.imageData[0];
+            uint8_t spriteHeight = sprite.imageData[1];
 
-    if(exitDoor.x-bg.mapX >=-sprite_door[0] && exitDoor.x-bg.mapX <=220){
-    	if(bg.mapY+y>=exitDoor.y && bg.mapY+y<exitDoor.y+sprite_door[1]){
-            int s=0;
-            int offset = (y-(exitDoor.y-bg.mapY))*sprite_door[0];
-            int currentPix = (exitDoor.x-bg.mapX)+s;
-            lineP = &tempPal[currentPix];
-            for(int temp=0; temp<sprite_door[0]; temp++){
-                if(currentPix<220 && currentPix >=0){
-                    *lineP++ = pal[sprite_door[s+offset+2]];
-                    s++;
+            if(y >= sprite.y && y < sprite.y + spriteHeight){
+                if(sprite.x>=-spriteWidth && sprite.x<PROJ_LCDWIDTH){
+                    // where to draw the sprite from
+                    sprite.offset = 2+ (spriteWidth * (y-sprite.y));
+    
+                    for(uint8_t offset = 0; offset < spriteWidth; offset++){
+    
+                        if(sprite.hFlip){
+                            if(scanLine[leftOffset + sprite.x + spriteWidth - offset]==0){
+                                uint8_t thisPixel = sprite.imageData[sprite.offset];
+                                uint16_t colour = sprite.paletteData[thisPixel];
+                                if(colour==0){colour = 1;} // can't have a zero value
+                                if(thisPixel>0) scanLine[leftOffset + sprite.x + spriteWidth - offset] = colour;
+                            }
+                        }else{
+                            if(scanLine[leftOffset + sprite.x + offset]==0){
+                                uint8_t thisPixel = sprite.imageData[sprite.offset];
+                                uint16_t colour = sprite.paletteData[thisPixel];
+                                if(colour==0){colour = 1;} // can't have a zero value
+                                if(thisPixel>0) scanLine[leftOffset + sprite.x + offset] = colour;
+                            }
+                        }
+      
+                        sprite.offset++;
+                    }
                 }
             }
         }
     }
 
 
+    uint16_t tempPal[256];
+    auto lineP = &tempPal[0];
+    auto lineT = &line[0];
+    for(uint8_t t=0; t<220; t++){
+        uint16_t colorIndex = line[t];
+        if(scanLine[leftOffset + t]){
+            colorIndex = scanLine[leftOffset + t];
+            if(!colorIndex) colorIndex = line[t];
+            scanLine[leftOffset + t]=0;
+            *lineP++ = colorIndex;
+        }else{
+            *lineP++ = gamePalette.rgb[colorIndex];
+        }
+        *lineT++ = t;
+    }
     Pokitto::Display::load565Palette(tempPal);
+
     return;
 }
 
 
 
 inline void wiggleFill(std::uint8_t* line, std::uint32_t y, bool skip){
+
+    if(y<bg.screenTop || y>bg.screenBottom){
+        //memset(&line[0],0,220);
+        return;
+    }
+
 /*
     if(skip){
-        memset(&line[0],0,220);
+//        memset(&line[0],0,220);
         return;
     }
 */
@@ -72,7 +116,11 @@ inline void wiggleFill(std::uint8_t* line, std::uint32_t y, bool skip){
 
 void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
 
-    if(skip)return;
+    if(y<bg.screenTop || y>bg.screenBottom){
+        //memset(&line[0],0,220);
+        return;
+    }
+//    if(skip)return;
 
     // set bgcolor different for every line
     //Pokitto::Display::palette[0] = hline_pal[hline[(y+(bg.mapY/4))]];
@@ -162,7 +210,11 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
 
 void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
 
-    if(skip)return;
+    if(y<bg.screenTop || y>bg.screenBottom){
+        //memset(&line[0],0,220);
+        return;
+    }
+//    if(skip)return;
 
     int mX = bg.mapX/4;
     int mY = (bg.mapY-64)/4;
