@@ -7,11 +7,12 @@ int myVolume = 5;
 #define PLAYER_SPEED 512
 
 int myCounter=0;
+uint32_t mySin[360];
 
 bool clearScreen=false;
 long int myDelay;
 long int tempTime;
-int frameSkip;
+uint8_t frameSkip;
 int fpsCount=0;
 long int fpsCounter;
 long int lastMillis;
@@ -35,20 +36,17 @@ int lastCollectedY=0;
 const uint16_t emptyPalette[]={0};
 const uint8_t blankLine[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-// My own sprite renderer
-#define NUMSPRITES 128
+// for my own sprite renderer
+#define NUMSPRITES 64
 struct SPRITE_DATA {
-    int16_t x;  // x postition
-    int16_t y;  // y position
-    const uint8_t *imageData; // image data
     const uint16_t *paletteData; // palette data
-    uint16_t offset; // tile render pixel offset
-    bool active;
-    bool hFlip;
+    const uint8_t *imageData; // image data
+    int x;  // x postition
+    int y;  // y position
+    int hFlip;
+    int offset; // tile render pixel offset
 } sprites[NUMSPRITES];
-uint8_t spriteCount = 0;
-uint16_t scanLine[348];
-
+int spriteCount = 0;
 
 struct DOOR_DATA {
     int x;
@@ -57,7 +55,6 @@ struct DOOR_DATA {
     uint8_t speed = 6;
     uint8_t loadDoorCounter=0;
     uint8_t frame = 0;
-    File doorFile;
 } exitDoor;
 
 
@@ -72,7 +69,6 @@ int JUMPTHROUGH = 2;
 int DEATHCOLOUR = 10;
 int DOORCOLOUR = 11;
 
-//const uint8_t satRamp[]={0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,8,8,8,9,9,9,9,10,10,10,11,11,12,12,12,13,13,14,14,15,16,17,17,18,19,20,21,22,23,25,27,29,31,33,36,40,43,48,53,59,67,75,94,96,99,100,100,100,100}; // couple of extra 100% just incase the math goes wonky.
 const uint8_t satRamp[]={0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,5,5,6,6,6,7,7,8,8,9,9,10,11,11,12,13,14,15,15,16,17,18,19,20,21,22,23,25,26,27,28,30,31,32,34,35,37,39,40,42,44,45,47,48,51,53,54,57,58,60,62,64,67,68,71,72,75,76,79,81,82,85,87,90,92,93,95,96,98,100};
 
 struct BACKGROUND_DATA {
@@ -89,17 +85,20 @@ struct BACKGROUND_DATA {
     float satRed=0.0;
     float satGreen=0.0;
     float satBlue=0.0;
-    int numRed;
-    int numGreen;
-    int numBlue;
-    int countRed;
-    int countGreen;
-    int countBlue;
+    uint8_t numRed;
+    uint8_t numGreen;
+    uint8_t numBlue;
+    uint8_t countRed;
+    uint8_t countGreen;
+    uint8_t countBlue;
     float redPercent;
     float greenPercent;
     float bluePercent;
-    uint8_t screenTop;
-    uint8_t screenBottom;
+    int screenHeight;
+    int screenTop;
+    int screenBottom;
+    uint32_t totalGemsCollected = 0;
+    uint32_t totalGemsToCollect = 0;
 } bg;
 
 struct PLAYER_DATA {
@@ -138,13 +137,13 @@ struct COLLECTABLES_DATA {
     int x;
     int y;
     uint8_t type;
-    uint8_t frame;
+    uint16_t frame;
     uint8_t speed = 4;
     uint8_t collected;
     int mapPos;
 } items[100];
 int maxItems=0;
-const uint8_t gemFrame[]={0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7};
+const uint8_t gemFrame[]={0,1,2,3,4,5,6,7,9,10,11,12,13,14,15};
 
 struct ENEMY_DATA {
     int x;  // x postition
@@ -200,8 +199,8 @@ int sprite_anim_frame=0;
 int gameMode=0;
 
 struct PALETTE_DATA {
-    uint16_t rgb[256];
-    uint16_t hpal[100]; // I think only 91 for the hline thing
+    uint16_t rgb[256]; // background palette
+    uint16_t hpal[100]; // background palette for scanline effect
 } gamePalette;
 
 double saturation = 0;

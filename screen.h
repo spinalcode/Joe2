@@ -11,25 +11,29 @@
 
 */
 
+void loadPalette(const uint16_t* p, int numColours) {
+    for (int i=0;i<numColours;i++)
+        Pokitto::Display::palette[i] = p[i];
+    Pokitto::Display::paletteptr = Pokitto::Display::palette;
+}
+
 void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
 
-    if(y==bg.screenBottom) spriteCount=0;
+    // This is probably quite slow and will need some work.
 
-    if(y<bg.screenTop || y>bg.screenBottom){
-        memset(&line[0],0,220);
-        Pokitto::Display::load565Palette(emptyPalette);
+    if(y<bg.screenTop+1 || y>=bg.screenBottom){
+        //memset(&line[0],0,220); // not needed as I'm blanking the palette
+        loadPalette(emptyPalette,256);
         return;
     }
-/*    
-    if(skip){
-        return;
-    }
-*/
-    #define leftOffset 64
 
-    if(spriteCount>0){
+    #define leftOffset 64 // add space either side of the screen buffer
 
-        for(uint8_t spriteIndex = spriteCount; spriteIndex>0; spriteIndex--){
+    uint16_t scanLine[leftOffset + 220 + leftOffset];
+
+    if(spriteCount>1){
+
+        for(uint8_t spriteIndex = spriteCount; spriteIndex>1; spriteIndex--){
             auto & sprite = sprites[spriteIndex];
             uint8_t spriteWidth = sprite.imageData[0];
             uint8_t spriteHeight = sprite.imageData[1];
@@ -37,50 +41,60 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
             if(y >= sprite.y && y < sprite.y + spriteHeight){
                 if(sprite.x>=-spriteWidth && sprite.x<PROJ_LCDWIDTH){
                     // where to draw the sprite from
-                    sprite.offset = 2+ (spriteWidth * (y-sprite.y));
+                    sprite.offset = 2+(spriteWidth * (y-sprite.y));
     
-                    for(uint8_t offset = 0; offset < spriteWidth; offset++){
     
-                        if(sprite.hFlip){
+                    if(sprite.hFlip){
+                        for(uint8_t offset = 0; offset < spriteWidth; offset++){
                             if(scanLine[leftOffset + sprite.x + spriteWidth - offset]==0){
                                 uint8_t thisPixel = sprite.imageData[sprite.offset];
                                 uint16_t colour = sprite.paletteData[thisPixel];
-                                if(colour==0){colour = 1;} // can't have a zero value
+                                if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
                                 if(thisPixel>0) scanLine[leftOffset + sprite.x + spriteWidth - offset] = colour;
                             }
-                        }else{
+                            sprite.offset++;
+                        }
+                    }else{
+                        for(uint8_t offset = 0; offset < spriteWidth; offset++){
                             if(scanLine[leftOffset + sprite.x + offset]==0){
                                 uint8_t thisPixel = sprite.imageData[sprite.offset];
                                 uint16_t colour = sprite.paletteData[thisPixel];
-                                if(colour==0){colour = 1;} // can't have a zero value
+                                if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
                                 if(thisPixel>0) scanLine[leftOffset + sprite.x + offset] = colour;
                             }
+                            sprite.offset++;
                         }
-      
-                        sprite.offset++;
                     }
+      
                 }
             }
         }
     }
 
 
-    uint16_t tempPal[256];
+    uint16_t tempPal[512];
     auto lineP = &tempPal[0];
     auto lineT = &line[0];
-    for(uint8_t t=0; t<220; t++){
-        uint16_t colorIndex = line[t];
-        if(scanLine[leftOffset + t]){
-            colorIndex = scanLine[leftOffset + t];
-            if(!colorIndex) colorIndex = line[t];
-            scanLine[leftOffset + t]=0;
+    uint32_t px=32;
+    uint32_t py = y/8;
+    for(uint8_t x=0; x<220; x++){
+        if(x%8==0){if(--px==0)px=32;}
+        uint16_t colorIndex = *lineT;
+        if(scanLine[leftOffset + x]){
+            colorIndex = scanLine[leftOffset + x];
+            if(!colorIndex) colorIndex = *lineT;
+            scanLine[leftOffset + x]=0;
             *lineP++ = colorIndex;
         }else{
-            *lineP++ = gamePalette.rgb[colorIndex];
+            if(*lineT==0 && bg.totalGemsCollected == bg.totalGemsToCollect){
+                *lineP++ = pal[sprite_door[450+(px+32*py)]];
+            }else{
+                *lineP++ = gamePalette.rgb[colorIndex];
+            }
         }
-        *lineT++ = t;
+        *lineT++ = x;
     }
-    Pokitto::Display::load565Palette(tempPal);
+    loadPalette(tempPal, 219); // load first 220 colours into palette, nore more than that needed.
 
     return;
 }
@@ -89,17 +103,10 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
 
 inline void wiggleFill(std::uint8_t* line, std::uint32_t y, bool skip){
 
-    if(y<bg.screenTop || y>bg.screenBottom){
-        //memset(&line[0],0,220);
+    if(y<bg.screenTop+1 || y>=bg.screenBottom){
         return;
     }
 
-/*
-    if(skip){
-//        memset(&line[0],0,220);
-        return;
-    }
-*/
     int t=wiggle[y+offsetAngle];
     if(t>=0){
         memcpy(&line[0], &line[t], 220-t);
@@ -116,15 +123,10 @@ inline void wiggleFill(std::uint8_t* line, std::uint32_t y, bool skip){
 
 void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
 
-    if(y<bg.screenTop || y>bg.screenBottom){
-        //memset(&line[0],0,220);
+    if(y<bg.screenTop+1 || y>=bg.screenBottom){
         return;
     }
-//    if(skip)return;
 
-    // set bgcolor different for every line
-    //Pokitto::Display::palette[0] = hline_pal[hline[(y+(bg.mapY/4))]];
-    //Pokitto::Display::palette[0] = bgline_pal[hline[y]];
     gamePalette.rgb[0] = gamePalette.hpal[hline[y]];
 
     uint32_t stX = (-bg.windowX)%bgTileSizeW;
@@ -219,7 +221,7 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
     int mX = bg.mapX/4;
     int mY = (bg.mapY-64)/4;
 
-    if(mY+(int)y <=0) return;
+//    if(mY+(int)y <=0) return;
 //    if(mY+(int)y >=176) return;
 
     uint32_t stX = (-mX)%bgTileSizeW;
@@ -348,10 +350,12 @@ void myBGFiller3(std::uint8_t* line, std::uint32_t y, bool skip){
         lineOffset = tileStart + jStart;\
         for(uint32_t b=0; b<bgTileSizeW; b++){\
             if(collisionTile[lineOffset] > 0){\
-                line[x] = collisionTile[lineOffset];\
+                if((bg.windowX + x)%224==0)line[x]=240;\
             }\
             lineOffset++; x++;\
         }
+
+//                line[x] = collisionTile[lineOffset];\
 
     // unrolling this loop got an extra 10fps
     bgColLine(); bgColLine(); bgColLine(); bgColLine();

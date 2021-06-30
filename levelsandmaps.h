@@ -127,6 +127,8 @@ void loadLevel(int levNum){
     bg.numRed = 0;
     bg.numGreen;
     bg.numBlue;
+    bg.totalGemsCollected = 0;
+
     int paletteSize = 512;
 
     sprintf(levelFilename,"joe2/0%d.bin",levNum);
@@ -260,7 +262,7 @@ void loadLevel(int levNum){
                     exitDoor.y = y*8;
                     exitDoor.frame = 0;
                     exitDoor.visible = true;
-                    printf("Door at %d,%d\n",exitDoor.x,exitDoor.y);
+//                    printf("Door at %d,%d\n",exitDoor.x,exitDoor.y);
                 }
             }
 
@@ -275,6 +277,9 @@ void loadLevel(int levNum){
     bg.countRed=0;
     bg.countGreen=0;
     bg.countBlue=0;
+
+    bg.totalGemsToCollect = bg.numRed+bg.numGreen+bg.numBlue;
+
 
     player.x = player.startX;
     player.y = player.startY;

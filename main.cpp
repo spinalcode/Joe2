@@ -25,13 +25,13 @@ void waitButton(){
 void drawSprite(int x, int y, const uint8_t *imageData,const uint16_t *paletteData, bool hFlip = false){
     //if(x+imageData[0]<0 || x>LCDWIDTH || y+imageData[1]<0 || y>LCDHEIGHT) return;
     
+    if(++spriteCount>NUMSPRITES-1)spriteCount=NUMSPRITES-1;
+
     sprites[spriteCount].x = x;
     sprites[spriteCount].y = y;
     sprites[spriteCount].imageData = imageData;
     sprites[spriteCount].paletteData = paletteData;
-    sprites[spriteCount].active = true;
     sprites[spriteCount].hFlip = hFlip;
-    spriteCount++;
 }
 
 
@@ -102,7 +102,7 @@ void startAnimation(int x, int y, int itemType){
     animSprite[useSprite].y = y;
     animSprite[useSprite].startX = x;
     animSprite[useSprite].startY = y;
-    animSprite[useSprite].frame = itemType;
+    animSprite[useSprite].frame = itemType*sizeof(gemFrame);
     animSprite[useSprite].used = true;
     animSprite[useSprite].frameCount = 1;
 }
@@ -111,8 +111,7 @@ void renderSprites(){
     
     
     drawSprite(exitDoor.x-bg.mapX, exitDoor.y-bg.mapY, sprite_door, pal);
-    
-    
+
     //enemies
     for(int t=0; t<maxEnemies; t++){
         if(enemy[t].type != 0){
@@ -122,15 +121,12 @@ void renderSprites(){
             int theY = enemy[t].y-bg.mapY;
             if(theX>-16 && theX<220 && theY>-16 && theY<176){
                 if(enemy[t].type==1){
-                    //Pokitto::Display::drawSprite(theX, theY, enemy1[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
                     drawSprite(theX, theY, enemy1[enemy[t].frame/enemy[t].speed], gamePalette.rgb, enemy[t].direction);
                 }
                 if(enemy[t].type==2){
-                    //Pokitto::Display::drawSprite(theX, theY, enemy2[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
                     drawSprite(theX, theY, enemy2[enemy[t].frame/enemy[t].speed], gamePalette.rgb, enemy[t].direction);
                 }
                 if(enemy[t].type==3){
-                    //Pokitto::Display::drawSprite(theX, theY+enemy[t].offy, enemy3[enemy[t].frame/enemy[t].speed],0,enemy[t].direction);
                     drawSprite(theX, theY+enemy[t].offy, enemy3[enemy[t].frame/enemy[t].speed], gamePalette.rgb, enemy[t].direction);
                 }
             }
@@ -148,17 +144,13 @@ void renderSprites(){
                 int theY = items[t].y-bg.mapY;
                 
                 if(theX>-16 && theX<220 && theY>-16 && theY<176){
-                    //Pokitto::Display::drawSprite(theX, theY, gems[ (items[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
-                    drawSprite(theX, theY, gems[ (items[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]], &gamePalette.rgb[240]);
+                    drawSprite(theX, theY, gems[ (items[t].type-1)*(sizeof(gemFrame)+1) + gemFrame[frame]], &gamePalette.rgb[240]);
                 }
             }
         }
     }
     
     // player sprite
-    //Pokitto::Display::drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[player.frame], 0, player.flip);
-    //Pokitto::Display::drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], 0, player.flip);
-
     drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[player.frame], gamePalette.rgb, player.flip);
     drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], gamePalette.rgb, player.flip);
 
@@ -172,8 +164,7 @@ void renderSprites(){
             if(frame >= sizeof(gemFrame)/2){
                 flipme=1;
             }
-            //Pokitto::Display::drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]],flipme,0,240);
-            drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].type-1)*(sizeof(gemFrame)/2) + gemFrame[frame]], gamePalette.rgb+240);
+            drawSprite(animSprite[t].x, animSprite[t].y, gems[(animSprite[t].type-1)*(sizeof(gemFrame)+1) + gemFrame[frame]], gamePalette.rgb+240);
 
             animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, 0, animSprite[t].startX, 15));
             animSprite[t].y = (animSprite[t].startY-easeInOut(animSprite[t].frameCount, 16, animSprite[t].startY-16, 15))+16;
@@ -187,17 +178,16 @@ void renderSprites(){
         HUD_gemTimer--;
         int gemY = HUD_gemTimer;
         if(gemY > 16)gemY=16;
-        //Pokitto::Display::drawSprite(0, gemY-8, color_sprite[ gemFrame[HUD_gemFrameCount/3]], 0 ,0,240);
-        drawSprite(0, gemY-8, color_sprite[ gemFrame[HUD_gemFrameCount/3]], gamePalette.rgb+240);
+        drawSprite(0, bg.screenTop+gemY-16, color_sprite[ gemFrame[HUD_gemFrameCount/3]], gamePalette.rgb+240);
         //if(HUD_gemTimer%2 == 0)
         HUD_gemFrameCount++;
         if(HUD_gemFrameCount>=24)HUD_gemFrameCount=0;
         char tempText[32];
         snprintf(tempText,sizeof(tempText),"%d/%d",bg.countRed+bg.countGreen+bg.countBlue, bg.numRed+bg.numGreen+bg.numBlue);
-        myPrint(20,gemY-4,tempText);
+        myPrint(20,bg.screenTop+gemY-12,tempText);
     }
 
-    //Pokitto::Display::drawSprite(0, 32, door[myCounter], 0 ,0,240);
+    bg.totalGemsCollected = bg.countRed+bg.countGreen+bg.countBlue;
     //if(++myCounter==30)myCounter=0;
 
 
@@ -214,10 +204,7 @@ void checkItemCollisions(){
             if(items[t].type!=0){
                 int flipme=0;
                 int frame = (items[t].frame/items[t].speed);
-                if(frame >= sizeof(gemFrame)/2){
-                    flipme=1;
-                }
-                
+
                 int theX = items[t].x-bg.mapX;
                 int theY = items[t].y-bg.mapY;
                 
@@ -461,7 +448,8 @@ void gameLogic(){
 	}
 
     int mapX = player.x-28160;
-    int mapY = player.y-22528;
+    //int mapY = player.y-22528;
+    int mapY = player.y-(bg.screenHeight*128);
     bg.oldMapX += ((mapX - bg.oldMapX)/15);
     bg.oldMapY += ((mapY - bg.oldMapY)/15);
     bg.mapX = bg.oldMapX >>8;
@@ -473,7 +461,7 @@ void gameLogic(){
     if(bg.mapX<0) bg.mapX=0;
     if(bg.mapX>(bg.mapWidth*bgTileSizeW)-220) bg.mapX=(bg.mapWidth*bgTileSizeW)-220;
     if(bg.mapY<0) bg.mapY=0;
-    if(bg.mapY>(bg.mapHeight*bgTileSizeH)-176) bg.mapY=(bg.mapHeight*bgTileSizeH)-176;
+    if(bg.mapY>(bg.mapHeight*bgTileSizeH)-(bg.screenHeight+bg.screenTop)) bg.mapY=(bg.mapHeight*bgTileSizeH)-(bg.screenHeight+bg.screenTop);
 
     oldScreenX = screenX;
     oldScreenY = screenY;
@@ -525,24 +513,6 @@ void gameLogic(){
     checkItemCollisions();
     moveEnemies();
 
-/*    
-    if(++exitDoor.loadDoorCounter==exitDoor.speed){
-        exitDoor.loadDoorCounter=0;
-        if(exitDoor.doorFile.openRO("/joe2/door1.raw")){
-            exitDoor.doorFile.seek(64*48*exitDoor.frame);
-            if(++exitDoor.frame>=30)exitDoor.frame=0;
-            exitDoor.doorFile.read(&exitDoor.tempDoorSprite[0], 3072); // 32*48*2
-        }
-    }
-*/
-/*
-    Pokitto::Display::drawSprite(0, 32, color_sprite[sprite_anim_frame/2],0,0,240);
-    if(++sprite_anim_frame==16)sprite_anim_frame=0;
-*/
-
-//    Pokitto::Display::drawSprite(16, 16, sprite_door);
-    
-    
 }
 
 
@@ -597,13 +567,14 @@ void titleScreen(){
         Pokitto::Display::lineFillers[1] = myBGFiller2; // background map layer
         Pokitto::Display::lineFillers[2] = spriteFill; // sprite layer
         // clear screen to black
-        for(int y=0; y<176; y++){
-            flushLine(emptyPalette, blankLine);
-        }
-        // a little 'wide-screening' to remove 16 lines for higher frame rate
+        //for(int y=0; y<176; y++){
+        //    flushLine(emptyPalette, blankLine);
+        //}
         Pokitto::Display::setTASRowMask(0b1111'11111111'11111111);
-        bg.screenTop=8;
-        bg.screenBottom=176-8;
+        // a little 'wide-screening' to remove some lines for higher frame rate
+        bg.screenTop=20;
+        bg.screenBottom=176-20;
+        bg.screenHeight = bg.screenBottom-bg.screenTop;
         
         mustDraw=true;
     }
@@ -612,7 +583,7 @@ void titleScreen(){
 
 
 void C_Menu(){
-    
+    // Not implemented yet
 }
 
 
@@ -661,7 +632,6 @@ int main(){
     //if(myVolume<0){myVolume=0;}
     swvolpot.write(0x5e, myVolume);
 
-
     while( PC::isRunning() ){
         
         updateStream();
@@ -670,6 +640,7 @@ int main(){
             
         }else{
             PC::update(0); // don't update screen.
+            spriteCount=0;        
         }
         frameSkip = 1-frameSkip;
 
@@ -687,23 +658,51 @@ int main(){
         updateButtons(); // update buttons
         fpsCounter++;
 
-        char tempText[32];
+        char tempText[64];
 
-        //sprintf(tempText,"%d",((bg.numRed+bg.numGreen+bg.numBlue)*(bg.countRed+bg.countGreen+bg.countBlue))/100);
-        //myPrint(0,16,tempText);
+        sprintf(tempText,"%d",spriteCount);
+        myPrint(0,bg.screenBottom-16,tempText);
 
         sprintf(tempText,"FPS:%d",fpsCount);
-        myPrint(0,160,tempText);
+        myPrint(0,bg.screenBottom-8,tempText);
         
+        sprintf(tempText,"%d,%d",bg.screenTop,bg.screenBottom);
+        myPrint(0,bg.screenBottom-24,tempText);
         
-        sprintf(tempText,"Pal:%d",PALETTE_SIZE);
-        myPrint(0,152,tempText);
+        //sprintf(tempText,"Gem:%d",sizeof(gemFrame));
+        //myPrint(0,152,tempText);
 
+        if(PC::getTime() >= lastMillis+4000){
+            lastMillis = PC::getTime();
+            fpsCount = fpsCounter/4;
+            fpsCounter = 0;
+/*
+            // Don't do this, it's stupid!
+            int targetFPS = 50;
+            if(fpsCount<targetFPS){
+                bg.screenTop++;
+                if(bg.screenTop>44)bg.screenTop=44;
+                bg.screenBottom--;
+                if(bg.screenBottom<132)bg.screenBottom=132;
+                bg.screenHeight = bg.screenBottom - bg.screenTop;
+            }
+            if(fpsCount>targetFPS){
+                bg.screenTop--;
+                if(bg.screenTop<0)bg.screenTop=0;
+                bg.screenBottom++;
+                if(bg.screenBottom>175)bg.screenBottom=175;
+                bg.screenHeight = bg.screenBottom - bg.screenTop;
+            }
+*/
+        }
+
+/*
         if(PC::getTime() >= lastMillis+1000){
             lastMillis = PC::getTime();
             fpsCount = fpsCounter;
             fpsCounter = 0;
         }
+*/
 
 
         // rotate door palette
@@ -712,7 +711,7 @@ int main(){
             pal[t] = pal[t+1];
         }
         pal[255] = temp;
-        
+
     }
     
     return 0;
