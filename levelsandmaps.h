@@ -84,7 +84,7 @@ void reSaturate(double changeRed, double changeGreen, double changeBlue){
 }
 
 
-void updateMap(int mx, int my){
+void updateMap(int mx, int my, int levNum){
     lastLoad=0;
     mapPos = mx;
     
@@ -93,6 +93,11 @@ void updateMap(int mx, int my){
     bg.miniMap[t++] = 22*2;
     uint32_t largeMapWidth = bg.mapWidth*2; // tiles * 2bytes
     uint32_t miniMapWidth = bg.miniMap[0]*2;
+
+    char levelFilename[32];
+    //char levelTilename[32];
+    sprintf(levelFilename,"joe2/%02d.bin",levNum);
+
 
     File file;
     if(file.openRO(levelFilename)){
@@ -106,7 +111,9 @@ void updateMap(int mx, int my){
     file.close();
 }
 
-void initMap(){
+void initMap(int levNum){
+    char levelFilename[32];
+    sprintf(levelFilename,"joe2/%02d.bin",levNum);
     File file1;
     if(file1.openRO(levelFilename)){
         file1.read(&bg.mapWidth, 2);
@@ -118,10 +125,7 @@ void initMap(){
 
 void loadLevel(int levNum){
 
-    bg.satRed=0;
-    bg.satGreen=0;
-    bg.satBlue=0;
-
+    levelNumber=levNum;
     srand(Pokitto::Core::getTime());
 
     bg.numRed = 0;
@@ -131,13 +135,12 @@ void loadLevel(int levNum){
 
     int paletteSize = 512;
 
-    sprintf(levelFilename,"joe2/0%d.bin",levNum);
-    sprintf(levelTilename,"joe2/0%ddata.bin",levNum);
+    initMap(levNum);
 
-    initMap();
+    char levelTilename[32];
+    sprintf(levelTilename,"joe2/%02dData.bin",levNum);
 
-
-    // hotswap the level data    
+    // hotswap the level data
     levelData = LevelData::load(levelTilename); 
     uint16_t scenerySize = (*reinterpret_cast<const uint16_t*>(&levelData[paletteSize]))*2;
     midmap = reinterpret_cast<const uint16_t*>(levelData + paletteSize +2);
@@ -152,6 +155,8 @@ void loadLevel(int levNum){
 
     uint16_t mapSize[2];
     File levfile;
+    char levelFilename[32];
+    sprintf(levelFilename,"joe2/%02d.bin",levNum);
     if(levfile.openRO(levelFilename))
         levfile.read(mapSize, sizeof(mapSize));
     
@@ -163,7 +168,7 @@ void loadLevel(int levNum){
     player.y = 0;
     numGems = 0;
     maxItems=0;
-    maxEnemies=0;
+    //maxEnemies=0;
     
     bg.numRed=0;
     bg.numBlue=0;
@@ -171,12 +176,11 @@ void loadLevel(int levNum){
     
     int x=0;
     int y=0;
-    //int c=0;
-    //tileType[0]=0;
 
     player.startX = 0;
     player.startY = 0;
     bool doorLoaded = false;
+    int lettersFound=0;
 
     for(int t=0; t<(mapWidth*mapHeight); t++){
         uint16_t curTile; // each tile is represented by 16bit, with the collision info being here -> 0111110000000000
@@ -199,61 +203,87 @@ void loadLevel(int levNum){
             }
             if(tl == tileType[4]){ // 4 = red gem
                     bg.numRed++;
-                    items[maxItems].mapPos = t-2;
                     items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
-                    items[maxItems].frame = random(sizeof(gemFrame)*items[maxItems].speed);
+                    items[maxItems].speed = 4;
+                    items[maxItems].frame = 0;
+                    items[maxItems].startFrame = 0;
+                    items[maxItems].maxFrame = 16;
                     items[maxItems].type = ((curTile >> 10)&31)-3; // gem
+                    items[maxItems].imageData = gem[0];
+                    items[maxItems].paletteData = &gem_pal[0];
+                    items[maxItems].bitDepth = 4;
+                    items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
                     maxItems++;
             }
             if(tl == tileType[5]){ // 5 = green gem
                     bg.numGreen++;
-                    items[maxItems].mapPos = t-2;
                     items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
-                    items[maxItems].frame = random(sizeof(gemFrame)*items[maxItems].speed);
+                    items[maxItems].speed = 4;
+                    items[maxItems].frame = random(15*items[maxItems].speed);
+                    items[maxItems].startFrame = 0;
+                    items[maxItems].maxFrame = 15;
                     items[maxItems].type = ((curTile >> 10)&31)-3; // gem
+                    items[maxItems].imageData = gem[0];
+                    items[maxItems].paletteData = &gem_pal[6];
+                    items[maxItems].bitDepth = 4;
+                    items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
                     maxItems++;
             }
             if(tl == tileType[6]){ // 6 = blue gem
                     bg.numBlue++;
-                    items[maxItems].mapPos = t;
                     items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
-                    items[maxItems].frame = random(sizeof(gemFrame)*items[maxItems].speed);
+                    items[maxItems].speed = 4;
+                    items[maxItems].frame = random(15*items[maxItems].speed);
+                    items[maxItems].startFrame = 0;
+                    items[maxItems].maxFrame = 15;
                     items[maxItems].type = ((curTile >> 10)&31)-3; // gem
+                    items[maxItems].imageData = gem[0];
+                    items[maxItems].paletteData = &gem_pal[12];
+                    items[maxItems].bitDepth = 4;
+                    items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
                     maxItems++;
             }
             
             if(tl == tileType[7]){ // 7 = Keith - the first enemy
-                    enemy[maxEnemies].x = (x-1)*8;
-                    enemy[maxEnemies].y = (y*8)+2;
-                    enemy[maxEnemies].offy = 0;
-                    enemy[maxEnemies].type = 1; // 0 = dead?
-                    enemy[maxEnemies].numFrames = 4;
-                    enemy[maxEnemies].speed = 6;
-                    maxEnemies++;
+
+                    items[maxItems].x = (x-1)*8;
+                    items[maxItems].y = (y*8)+2;
+                    items[maxItems].type = 4; // enemy 1
+                    items[maxItems].collected = 0;
+                    items[maxItems].speed = 4;
+                    items[maxItems].frame = 0;
+                    items[maxItems].startFrame = 0;
+                    items[maxItems].maxFrame = 4;
+                    items[maxItems].imageData = enemy1[0];
+                    items[maxItems].paletteData = gamePalette.rgb;
+                    items[maxItems].bitDepth = 8;
+                    items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
+                    maxItems++;
             }
             if(tl == tileType[8]){ // 8 = Tom - the second enemy
-                    enemy[maxEnemies].x = (x-1)*8;
-                    enemy[maxEnemies].y = (y*8)+2;
-                    enemy[maxEnemies].offy = 0;
-                    enemy[maxEnemies].type = 2; // 0 = dead?
-                    enemy[maxEnemies].numFrames = 4;
-                    enemy[maxEnemies].speed = 6;
-                    maxEnemies++;
+
+                    items[maxItems].x = (x-1)*8;
+                    items[maxItems].y = (y*8)+2;
+                    items[maxItems].type = 5; // enemy 2
+                    items[maxItems].collected = 0;
+                    items[maxItems].frame = 0;
+                    items[maxItems].speed = 8;
+                    items[maxItems].startFrame = 0;
+                    items[maxItems].maxFrame = sizeof(enemy2)/sizeof(enemy2[0]);
+                    items[maxItems].imageData = enemy2[0];
+                    items[maxItems].paletteData = gamePalette.rgb;
+                    items[maxItems].bitDepth = 8;
+                    items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
+                    maxItems++;
             }
+        
             if(tl == tileType[9]){ // 9 = Bird - the third enemy
-                    enemy[maxEnemies].x = (x-1)*8;
-                    enemy[maxEnemies].y = (y*8)+2;
-                    enemy[maxEnemies].offy = -24;
-                    enemy[maxEnemies].type = 3; // 0 = dead?
-                    enemy[maxEnemies].numFrames = 4;
-                    enemy[maxEnemies].speed = 8;
-                    maxEnemies++;
             }
             if(tl == tileType[11]){ // 11 = Level Complete Door
                 if(doorLoaded==false){
@@ -262,8 +292,23 @@ void loadLevel(int levNum){
                     exitDoor.y = y*8;
                     exitDoor.frame = 0;
                     exitDoor.visible = true;
-//                    printf("Door at %d,%d\n",exitDoor.x,exitDoor.y);
                 }
+            }
+            if(tl == tileType[13]){ // 13 = Letter J,O,E
+                    items[maxItems].x = (x-1)*8;
+                    items[maxItems].y = y*8;
+                    items[maxItems].collected = 0;
+                    items[maxItems].frame = 0;//random(8);
+                    items[maxItems].speed = 8;
+                    items[maxItems].bitDepth = 4;
+                    items[maxItems].type = (((curTile >> 10)&31)-3) + lettersFound;
+                    items[maxItems].imageData = big_letter[lettersFound*8];
+                    items[maxItems].paletteData = big_letter_pal;
+                    items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
+                    items[maxItems].startFrame = 0;
+                    items[maxItems].maxFrame = 8;
+                    maxItems++;
+                    lettersFound++;
             }
 
         }// y>0
@@ -271,15 +316,15 @@ void loadLevel(int levNum){
     }
     levfile.close();
 
-    bg.redPercent = 1.0/bg.numRed;
-    bg.greenPercent = 1.0/bg.numGreen;
-    bg.bluePercent = 1.0/bg.numBlue;
     bg.countRed=0;
     bg.countGreen=0;
     bg.countBlue=0;
+    
+    wordCollected[0]=0;
+    wordCollected[1]=0;
+    wordCollected[2]=0;
 
     bg.totalGemsToCollect = bg.numRed+bg.numGreen+bg.numBlue;
-
 
     player.x = player.startX;
     player.y = player.startY;
@@ -297,7 +342,7 @@ void loadLevel(int levNum){
     screenY = bg.mapY/176;
     int mapPosX = screenX * 224;
     int mapPosY = screenY * 176;
-    updateMap( mapPosX/8 , mapPosY/8);
+    updateMap( mapPosX/8 , mapPosY/8, levelNumber);
     bg.windowX = bg.mapX%224;
 	bg.windowY = bg.mapY%176;
 
