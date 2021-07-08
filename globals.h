@@ -5,6 +5,7 @@ int myVolume = 5;
 #define MAXSPEED 512
 #define PLAYER_SPEED 512
 #define MAX_AMINS 20
+#define GEM_ANIM_SPEED 3
 
 //int myCounter=0;
 //uint32_t mySin[360];
@@ -55,11 +56,12 @@ struct ANIMATION_DATA {
     int startY;
     int endX;
     int endY;
-    int frame;
-    int maxFrame;
+    uint8_t frame;
+    uint8_t speed;
+    uint8_t maxFrame;
+    uint8_t startFrame;
     int frameSize;
     int type;
-    //uint8_t speed = 1;
     bool used=false;
     int frameCount=0;
 } animSprite[20];
@@ -72,7 +74,9 @@ struct DOOR_DATA {
     uint8_t speed = 6;
     uint8_t loadDoorCounter=0;
     uint8_t frame = 0;
-} exitDoor;
+} exitDoor[4];
+uint8_t numDoors = 0;
+uint8_t atDoor = 99;
 
 //char levelFilename[32];
 //char levelTilename[32];

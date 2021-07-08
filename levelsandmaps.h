@@ -181,6 +181,10 @@ void loadLevel(int levNum){
     player.startY = 0;
     bool doorLoaded = false;
     int lettersFound=0;
+    numDoors=0;
+    for(int t=0; t<sizeof(exitDoor)/sizeof(exitDoor[0]); t++){
+        exitDoor[t].visible = false;
+    }
 
     for(int t=0; t<(mapWidth*mapHeight); t++){
         uint16_t curTile; // each tile is represented by 16bit, with the collision info being here -> 0111110000000000
@@ -206,7 +210,7 @@ void loadLevel(int levNum){
                     items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
-                    items[maxItems].speed = 4;
+                    items[maxItems].speed = GEM_ANIM_SPEED;
                     items[maxItems].frame = 0;
                     items[maxItems].startFrame = 0;
                     items[maxItems].maxFrame = 16;
@@ -222,7 +226,7 @@ void loadLevel(int levNum){
                     items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
-                    items[maxItems].speed = 4;
+                    items[maxItems].speed = GEM_ANIM_SPEED;
                     items[maxItems].frame = random(15*items[maxItems].speed);
                     items[maxItems].startFrame = 0;
                     items[maxItems].maxFrame = 15;
@@ -238,7 +242,7 @@ void loadLevel(int levNum){
                     items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
-                    items[maxItems].speed = 4;
+                    items[maxItems].speed = GEM_ANIM_SPEED;
                     items[maxItems].frame = random(15*items[maxItems].speed);
                     items[maxItems].startFrame = 0;
                     items[maxItems].maxFrame = 15;
@@ -284,22 +288,35 @@ void loadLevel(int levNum){
             }
         
             if(tl == tileType[9]){ // 9 = Bird - the third enemy
+                    items[maxItems].x = (x-1)*8;
+                    items[maxItems].y = (y*8)+2;
+                    items[maxItems].type = 5; // enemy 2
+                    items[maxItems].collected = 0;
+                    items[maxItems].offy = 32;
+                    items[maxItems].frame = 0;
+                    items[maxItems].speed = 8;
+                    items[maxItems].startFrame = 0;
+                    items[maxItems].maxFrame = sizeof(enemy2)/sizeof(enemy2[0]);
+                    items[maxItems].imageData = enemy3[0];
+                    items[maxItems].paletteData = gamePalette.rgb;
+                    items[maxItems].bitDepth = 8;
+                    items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
+                    maxItems++;
             }
             if(tl == tileType[11]){ // 11 = Level Complete Door
-                if(doorLoaded==false){
-                    doorLoaded = true;
-                    exitDoor.x = x*8;
-                    exitDoor.y = y*8;
-                    exitDoor.frame = 0;
-                    exitDoor.visible = true;
-                }
+                exitDoor[numDoors].x = x*8;
+                exitDoor[numDoors].y = y*8;
+                exitDoor[numDoors].frame = 0;
+                exitDoor[numDoors].visible = true;
+                printf("Doors %d:%d,%d\n", numDoors,exitDoor[numDoors].x,exitDoor[numDoors].y);
+                numDoors++;
             }
             if(tl == tileType[13]){ // 13 = Letter J,O,E
                     items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
                     items[maxItems].collected = 0;
                     items[maxItems].frame = 0;//random(8);
-                    items[maxItems].speed = 8;
+                    items[maxItems].speed = GEM_ANIM_SPEED*3;
                     items[maxItems].bitDepth = 4;
                     items[maxItems].type = (((curTile >> 10)&31)-3) + lettersFound;
                     items[maxItems].imageData = big_letter[lettersFound*8];
@@ -323,6 +340,8 @@ void loadLevel(int levNum){
     wordCollected[0]=0;
     wordCollected[1]=0;
     wordCollected[2]=0;
+    atDoor = 99;
+
 
     bg.totalGemsToCollect = bg.numRed+bg.numGreen+bg.numBlue;
 

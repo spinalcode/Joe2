@@ -24,7 +24,7 @@ void waitButton(){
 
 void drawSprite(int x, int y, const uint8_t *imageData,const uint16_t *paletteData, bool hFlip, uint8_t bit=8){
 
-    if(++spriteCount>NUMSPRITES-1)spriteCount=NUMSPRITES-1;
+    if(++spriteCount>NUMSPRITES-1)spriteCount=NUMSPRITES-1; // don't overflow the sprite max
 
     sprites[spriteCount].x = x;
     sprites[spriteCount].y = y;
@@ -89,7 +89,7 @@ int rightCollision(int x, int y){
     return checkCollision(x+player.rightBound, y+player.lowerBound);
 }
 
-void startAnimation(int x, int y, int x1, int y1, int itemType, int maxFrame, const uint8_t *imageData,const uint16_t *paletteData){
+void startAnimation(int x, int y, int x1, int y1, int speed, int itemType, int startFrame, int maxFrame, const uint8_t *imageData,const uint16_t *paletteData){
     int useSprite=0;
     for(int t=20; t; t--){
         if(animSprite[t].used==false){useSprite=t;}
@@ -105,6 +105,8 @@ void startAnimation(int x, int y, int x1, int y1, int itemType, int maxFrame, co
     animSprite[useSprite].endX = x1;
     animSprite[useSprite].endY = y1;
     animSprite[useSprite].frame = 0;
+    animSprite[useSprite].startFrame = startFrame;
+    animSprite[useSprite].speed = speed;
     animSprite[useSprite].used = true;
     animSprite[useSprite].frameCount = 1;
     animSprite[useSprite].frameSize = 2+(imageData[0]/2)*imageData[1];
@@ -113,35 +115,16 @@ void startAnimation(int x, int y, int x1, int y1, int itemType, int maxFrame, co
 
 void renderSprites(){
     
-    drawSprite(exitDoor.x-bg.mapX, exitDoor.y-bg.mapY, sprite_door, &pal[doorPalOffset],0,8);
-/*
-    //enemies
-    for(int t=0; t<maxEnemies; t++){
-        if(enemy[t].type != 0){
-
-            if(++enemy[t].frame >= enemy[t].numFrames*enemy[t].speed){enemy[t].frame=0;}
-            int theX = enemy[t].x-bg.mapX;
-            int theY = enemy[t].y-bg.mapY;
-            if(theX>-16 && theX<220 && theY>-16 && theY<176){
-                if(enemy[t].type==1){
-                    drawSprite(theX, theY, enemy1[enemy[t].frame/enemy[t].speed], gamePalette.rgb, enemy[t].direction);
-                }
-                if(enemy[t].type==2){
-                    drawSprite(theX, theY, enemy2[enemy[t].frame/enemy[t].speed], gamePalette.rgb, enemy[t].direction);
-                }
-                if(enemy[t].type==3){
-                    drawSprite(theX, theY+enemy[t].offy, enemy3[enemy[t].frame/enemy[t].speed], gamePalette.rgb, enemy[t].direction);
-                }
-            }
-        } // not dead
+    for(int t=0; t<numDoors; t++){
+        drawSprite(exitDoor[t].x-bg.mapX, exitDoor[t].y-bg.mapY, sprite_door, &pal[doorPalOffset],0,8);
     }
-*/
 
     for(int t=0; t<maxItems; t++){
         if(items[t].collected == 0){
 
             items[t].frame++;
-            if(items[t].frame >= items[t].maxFrame*items[t].speed){items[t].frame=items[t].startFrame;}
+            if(items[t].frame >= (items[t].maxFrame*items[t].speed)){items[t].frame=items[t].startFrame;}
+            
             if(items[t].type!=0){
                 int frame = items[t].frame/items[t].speed;
                 int theX = items[t].x-bg.mapX;
@@ -168,7 +151,7 @@ void renderSprites(){
                         }
                     }
                     int flipMe = items[t].direction;
-                    drawSprite(theX, theY, &items[t].imageData[frame*(2+items[t].frameSize)], items[t].paletteData, flipMe ,items[t].bitDepth);
+                    drawSprite(theX, theY-items[t].offy, &items[t].imageData[frame*(2+items[t].frameSize)], items[t].paletteData, flipMe ,items[t].bitDepth);
                 }
             }
         }
@@ -179,20 +162,19 @@ void renderSprites(){
     drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], gamePalette.rgb, player.flip);
 
     // animating sprites - items etc.
-    for(int t=0; t<MAX_AMINS; t++){
+    for(int t=MAX_AMINS; t; t--){
         if(animSprite[t].used==true){
             animSprite[t].frame++;
-            if(animSprite[t].frame >= animSprite[t].maxFrame){animSprite[t].frame=items[t].startFrame;}
+            if(animSprite[t].frame >= (animSprite[t].maxFrame*animSprite[t].speed)){animSprite[t].frame=animSprite[t].startFrame;}
+            int frame = animSprite[t].frame/animSprite[t].speed;
             int flipme=0;
-            int frame = animSprite[t].frame;//(animSprite[t].frame/animSprite[t].speed);
 
-            //drawSprite(animSprite[t].x, animSprite[t].y, gem[gemFrame[frame]], &gem_pal[(animSprite[t].type-1)*6],0,4);
-            drawSprite(animSprite[t].x, animSprite[t].y, animSprite[t].imageData+frame*(animSprite[t].frameSize), animSprite[t].paletteData,0,4);
+            drawSprite(animSprite[t].x, animSprite[t].y, animSprite[t].imageData+(frame*(animSprite[t].frameSize)), animSprite[t].paletteData,0,4);
+            //drawSprite(theX, theY, &items[t].imageData[frame*(2+items[t].frameSize)], items[t].paletteData, flipMe ,items[t].bitDepth);
 
-            //animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, animSprite[t].endX, animSprite[t].startX, 20));
             animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, animSprite[t].endX, animSprite[t].startX-animSprite[t].endX, 20))+animSprite[t].endX;
             animSprite[t].y = (animSprite[t].startY-easeInOut(animSprite[t].frameCount, animSprite[t].endY, animSprite[t].startY-animSprite[t].endY, 20))+animSprite[t].endY;
-            if(++animSprite[t].frameCount==20){
+            if(++animSprite[t].frameCount>=20){
                 animSprite[t].used = false;
                 if(animSprite[t].type>=10 && animSprite[t].type<=13){wordCollected[animSprite[t].type-10]=1;}
             }else{
@@ -200,13 +182,6 @@ void renderSprites(){
             }
         }
     }
-
-    // JOE TEST 
-    //drawSprite(32, 32, big_letter[(letter_frame)/3], big_letter_pal,0,4);
-    //drawSprite(48, 32, big_letter[8+(letter_frame/3)], big_letter_pal,0,4);
-    //drawSprite(64, 32, big_letter[16+(letter_frame/3)], big_letter_pal,0,4);
-    //if(++letter_frame>=24) letter_frame=0;
-
 
     // HUD
     if(HUD_gemTimer){
@@ -218,7 +193,7 @@ void renderSprites(){
         //if(HUD_gemTimer%2 == 0)
         HUD_gemFrameCount++;
         if(HUD_gemFrameCount>=32)HUD_gemFrameCount=0;
-        char tempText[32];
+        char tempText[10];
         snprintf(tempText,sizeof(tempText),"%d/%d",bg.countRed+bg.countGreen+bg.countBlue, bg.numRed+bg.numGreen+bg.numBlue);
         myPrint(20,bg.screenTop+gemY-12,tempText);
 
@@ -251,7 +226,7 @@ void checkItemCollisions(){
                 if(theX>-16 && theX<220 && theY>-16 && theY<176){
                     // check for collisions in the animation loop
                     if((player.x>>8)+player.centre >= items[t].x-4 && (player.x>>8)+player.centre <= items[t].x + 20){
-                        if((player.y>>8)+player.centre >= items[t].y-4 && (player.y>>8)+player.centre <= items[t].y + 20){
+                        if((player.y>>8)+player.centre >= items[t].y-items[t].offy-4 && (player.y>>8)+player.centre <= items[t].y-items[t].offy + 20){
 
                             playSound(1, sfx_drop, 300, random(63)+192);
 
@@ -259,19 +234,19 @@ void checkItemCollisions(){
                             int theY = items[t].y-bg.mapY;
                             switch(items[t].type){
                                 case 1:
-                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].type, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
+                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
                                     //bg.satRed += bg.redPercent;
                                     bg.countRed++;
                                     items[t].collected = 1;
                                     break;
                                 case 2:
-                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].type, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
+                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
                                     //bg.satGreen += bg.greenPercent;
                                     bg.countGreen++;
                                     items[t].collected = 1;
                                     break;
                                 case 3:
-                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].type, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
+                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
                                     //bg.satBlue += bg.bluePercent;
                                     bg.countBlue++;
                                     items[t].collected = 1;
@@ -280,7 +255,7 @@ void checkItemCollisions(){
                                 case 10: // J/O/E
                                 case 11: // J/O/E
                                 case 12: // J/O/E
-                                    startAnimation(theX, theY, 89+((items[t].type-10)*14) ,bg.screenTop, items[t].type, 8, items[t].imageData, items[t].paletteData);
+                                    startAnimation(theX, theY, 89+((items[t].type-10)*14) ,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, items[t].imageData, items[t].paletteData);
                                     items[t].collected = 1;
                                     //wordCollected[items[t].type-10]=1;
                                     break;
@@ -302,39 +277,6 @@ void checkItemCollisions(){
 }
 
 
-/*
-void moveEnemies(){
-    //enemies
-    for(int t=0; t<maxEnemies; t++){
-        if(enemy[t].type != 0){
-
-            if(++enemy[t].frame >= 4*enemy[t].speed){enemy[t].frame=0;}
-            int theX = enemy[t].x-bg.mapX;
-            int theY = enemy[t].y-bg.mapY;
-            if(theX>-16 && theX<220 && theY>-16 && theY<176){
-
-                if(enemy[t].direction==0){
-                    if((checkCollision(enemy[t].x+15, enemy[t].y+15) == SOLID || checkCollision(enemy[t].x+15, enemy[t].y+15) == JUMPTHROUGH) ||
-                        (checkCollision(enemy[t].x+15, enemy[t].y+16) != SOLID && checkCollision(enemy[t].x+15, enemy[t].y+16) != JUMPTHROUGH) ){
-                        enemy[t].direction=1;
-                    }else{
-                        enemy[t].x++;
-                    }
-                }
-                if(enemy[t].direction==1){
-                    if((checkCollision(enemy[t].x-1, enemy[t].y+15) == SOLID || checkCollision(enemy[t].x-1, enemy[t].y+15) == JUMPTHROUGH) || 
-                        (checkCollision(enemy[t].x-1, enemy[t].y+16) != SOLID && checkCollision(enemy[t].x+1, enemy[t].y+16) != JUMPTHROUGH) ){
-                        enemy[t].direction=0;
-                    }else{
-                        enemy[t].x--;
-                    }
-                }
-            
-            }
-        } // not dead
-    }
-}
-*/
 
 void gameLogic(){
 
@@ -379,31 +321,6 @@ void gameLogic(){
         if(frameSkip==0){player.step ++;}
     }
 
-/*
-    if(_Right_But[HELD]){
-        player.speed += (MAXSTEP * (_B_But[HELD]+1));
-        while(rightCollision(player.x>>8, player.y>>8)==SOLID && rightCollision((player.x>>8)+1, (player.y>>8)-8)==SOLID){
-            player.x -= 128;
-            player.speed = 0;
-        }
-        if(frameSkip==0){player.step ++;}
-    }
-
-    if(_Left_But[HELD]){
-        player.speed -= (MAXSTEP * (_B_But[HELD]+1));
-        while(leftCollision(player.x>>8, player.y>>8)==SOLID && leftCollision((player.x>>8)-1, (player.y>>8)-8)==SOLID){
-            player.x += 128;
-            player.speed = 0;
-        }
-        if(frameSkip==0){player.step ++;}
-    }
-
-    if(player.speed > (MAXSPEED * (_B_But[HELD]+1))) player.speed=(MAXSPEED * (_B_But[HELD]+1));
-    if(player.speed < -(MAXSPEED * (_B_But[HELD]+1))) player.speed=-(MAXSPEED * (_B_But[HELD]+1));
-    player.x += player.speed;
-    if(!_Left_But[HELD] && !_Right_But[HELD]) player.speed *= 0.75;
-*/
-
     if (player.step >= 2) {
         player.frame++;
         player.step = 0;
@@ -417,6 +334,23 @@ void gameLogic(){
         player.dropping = true;
     }
 
+    if(_Up_But[NEW]){
+        bool moved=false;
+        for(int t=0; t<numDoors; t++){
+            if((player.x>>8)+player.centre >= exitDoor[t].x && (player.x>>8)+player.centre <= exitDoor[t].x + sprite_door[0]){
+                if((player.y>>8)+player.centre >= exitDoor[t].y && (player.y>>8)+player.centre <= exitDoor[t].y + sprite_door[1]){
+                    if(moved==false){
+                        moved = true;
+                        int toDoor = t+1;
+                        if(toDoor == numDoors)toDoor=0;
+                        //printf("Door:%d\n",toDoor); // not printing?
+                        player.x = exitDoor[toDoor].x<<8;
+                        player.y = exitDoor[toDoor].y<<8;
+                    }
+                }
+            }
+        }
+    }
 
     // Add gravity
     player.vy += GRAVITY; // apply gravity to falling speed
@@ -433,10 +367,10 @@ void gameLogic(){
 
     if(player.vy >= 0){
         // falling
-        // first check a couple of pixels down ti 'hug' the ground on ramps
-        int colLeft = checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.lowerBound+2);
+        // first check a couple of pixels down to 'hug' the ground on ramps
+        int colLeft = checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.lowerBound+(4*_B_But[HELD]));
         if (colLeft == SOLID || (colLeft == JUMPTHROUGH && player.dropping==false)){
-            player.y += (2<<8);
+            player.y += ((4*_B_But[HELD])<<8);
         }
         
         colLeft = checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.lowerBound);
@@ -726,16 +660,8 @@ int main(){
             fpsCounter = 0;
         }
 
+        // cycle through the 512 colour palette for the door sprite, auto looping at 255 because its uint8_t
         doorPalOffset++;
-
-        /*
-        // rotate door palette
-        uint16_t temp = pal[0];
-        for(int t=0; t<255; t++){
-            pal[t] = pal[t+1];
-        }
-        pal[255] = temp;
-        */
     }
     
     return 0;
