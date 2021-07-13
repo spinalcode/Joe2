@@ -89,9 +89,7 @@ int globalVolume = 16;
 
 // new playsound function
 uint8_t playSound(int channel, const unsigned char *sound, int volume = 100, int speed=255, int offset=0){
-    
-    
-    
+
     //if(playSFX == false) return 0;
     
     int dataOffset = 14 + offset;
@@ -206,7 +204,8 @@ inline void updateStream(){
             if(!musicFile.read(&audioBuffer[bufferOffset[completeBuffer]], audioBufferSize)){
                 clearAudioBuffer(1);
                 playingMusic1 = false;
-                playRandomTune();
+                //playRandomTune();
+                
             }else{
                 timerCounter++;
             }

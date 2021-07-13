@@ -17,6 +17,10 @@
 #include "levelsandmaps.h"
 #include "easing.h"
 
+void write_command_16(uint16_t data);
+void write_data_16(uint16_t data);
+
+
 void waitButton(){
     updateButtons();
     while(!_A_But[NEW]) updateButtons();
@@ -115,10 +119,13 @@ void startAnimation(int x, int y, int x1, int y1, int speed, int itemType, int s
 
 void renderSprites(){
     
-    for(int t=0; t<numDoors; t++){
-        drawSprite(exitDoor[t].x-bg.mapX, exitDoor[t].y-bg.mapY, sprite_door, &pal[doorPalOffset],0,8);
+    if(bg.totalGemsCollected == bg.totalGemsToCollect){
+        for(int t=0; t<numDoors; t++){
+            drawSprite(exitDoor[t].x-bg.mapX, exitDoor[t].y-bg.mapY, sprite_door, &pal[doorPalOffset],0,8);
+        }
     }
-
+    
+    
     for(int t=0; t<maxItems; t++){
         if(items[t].collected == 0){
 
@@ -178,30 +185,37 @@ void renderSprites(){
                 animSprite[t].used = false;
                 if(animSprite[t].type>=10 && animSprite[t].type<=13){wordCollected[animSprite[t].type-10]=1;}
             }else{
-                HUD_gemTimer = HUD_gemTimerStart;
+                if(animSprite[t].type>=10 && animSprite[t].type<=13){
+                    HUD_wordTimer = HUD_wordTimerStart;
+                }else{
+                    HUD_gemTimer = HUD_gemTimerStart;
+                }
             }
         }
     }
 
     // HUD
     if(HUD_gemTimer){
-        //drawHUD=true;
         HUD_gemTimer--;
         int gemY = HUD_gemTimer;
         if(gemY > 16)gemY=16;
         drawSprite(0, bg.screenTop+gemY-16, color_gem[HUD_gemFrameCount/2], color_gem_pal,0,8);
-        //if(HUD_gemTimer%2 == 0)
         HUD_gemFrameCount++;
         if(HUD_gemFrameCount>=32)HUD_gemFrameCount=0;
         char tempText[10];
         snprintf(tempText,sizeof(tempText),"%d/%d",bg.countRed+bg.countGreen+bg.countBlue, bg.numRed+bg.numGreen+bg.numBlue);
         myPrint(20,bg.screenTop+gemY-12,tempText);
-
+    }
+    if(HUD_wordTimer){
+        HUD_wordTimer--;
+        int gemY = HUD_wordTimer;
+        if(gemY > 16)gemY=16;
+        HUD_wordFrameCount++;
+        if(HUD_wordFrameCount>=32)HUD_wordFrameCount=0;
         for(int t=0; t<3; t++){
             if(wordCollected[t]){
-                drawSprite(89+(t*14), bg.screenTop+gemY-16, big_letter[(HUD_gemFrameCount/4)+(t*8)], big_letter_pal,0,4);
+                drawSprite(89+(t*14), bg.screenTop+gemY-16, big_letter[(HUD_wordFrameCount/4)+(t*8)], big_letter_pal,0,4);
             }
-
         }
     }
 
@@ -339,6 +353,9 @@ void gameLogic(){
         for(int t=0; t<numDoors; t++){
             if((player.x>>8)+player.centre >= exitDoor[t].x && (player.x>>8)+player.centre <= exitDoor[t].x + sprite_door[0]){
                 if((player.y>>8)+player.centre >= exitDoor[t].y && (player.y>>8)+player.centre <= exitDoor[t].y + sprite_door[1]){
+                    
+                    // bg.totalGemsCollected == bg.totalGemsToCollect
+                    // hidden room
                     if(moved==false){
                         moved = true;
                         int toDoor = t+1;
@@ -503,10 +520,24 @@ void gameLogic(){
 
 
 
-
 void titleScreen(){
 
-    if(mustDrawTitleScreen==true) {
+    if(Pokitto::Core::getTime() > titleTimer+6000){
+        //titleTimer = Pokitto::Core::getTime();
+
+        if(titleScratch==0){
+            titleScratch=1;
+            //clearAudioBuffer(1);
+            //clearAudioBuffer(2);
+            startSong("/joe2/scratch.pcm");
+        }
+    }
+
+    if(Pokitto::Core::getTime() > titleTimer+8000 && mustDrawTitleScreen==true){
+        startSong("/joe2/C_8000.pcm");
+        //titleTimer = Pokitto::Core::getTime();
+
+    //if(mustDrawTitleScreen==true) {
         mustDrawTitleScreen = false;
         Pokitto::Display::setTASRowMask(0b0000'00000000'00000000);
         File tsFile;
@@ -529,11 +560,44 @@ void titleScreen(){
 
             uint8_t buff[220];
             Pokitto::lcdPrepareRefresh();
-            for(int y=0; y<176; y++){
-                tsFile.read(buff, 220);
-                flushLine(Pokitto::Display::palette, buff);
+            int mainData = 1024+54; // main bitmap data in file
+
+            int tMinus = sizeof(titleRoll);
+                for(int y=0; y<176; y++){
+                    titleLine[y] = y;
+                }
+            for(int top=176+tMinus; top>=-tMinus; top-=2){
+                /*
+                updateButtons(); // update buttons
+                if(_A_But[NEW]){
+                    top=-tMinus;
+                    updateButtons(); // update buttons
+                }
+                */
+                
+                for(int t=top; t<top+tMinus-1; t++){
+                    int p = t+titleRoll[t-top];
+                    if(p>176) p-=176;
+                    if(top-(t-top) >0 && top-(t-top) <176)
+                        titleLine[top-(t-top)] = p;
+                }
+                
+                for(int y=top-tMinus+2; y<=top+2; y+=2){
+                    Pokitto::setDRAMpoint(0, y);
+                    SET_MASK_P2;
+                    if(y>=0 && y<176){
+                        tsFile.seek(mainData+(220*titleLine[y]));
+                        tsFile.read(buff, 220);
+                        flushLine(Pokitto::Display::palette, buff);
+                        tsFile.read(buff, 220);
+                        flushLine(Pokitto::Display::palette, buff);
+                    }
+                }
+                Pokitto::Display::update(); // needed?
+                updateStream(); // keep the sound going
             }
-            Pokitto::Display::update(); // needed?
+
+
         }
     }
 
@@ -578,6 +642,8 @@ int main(){
     using PB=Pokitto::Buttons;
     using PS=Pokitto::Sound;
 
+    PD::setTASRowMask(0b0000'00000000'00000000);
+
     PC::begin();
 
     //PC::setFrameRate(60);
@@ -591,32 +657,31 @@ int main(){
 
     make_pal();
 
-    //bgmFile.openRO("/joe2/C_8000.pcm");
-    //Audio::play(bgmFile, bgmFile.size());
-    
-    //auto music = Audio::play("/joe2/C_8000.pcm"); // streams are on channel 0 by default
-    //if(music) music->setLoop(true);
-
     updateButtons(); // update buttons
     while(_A_But[HELD]){
         updateButtons(); // update buttons
     }
 
-
     mustDrawTitleScreen=true;
 
     frameSkip=0;
     
-    Pokitto::Core::update(); // needed first to setup IRQ that I will 'borrow' for my own sound.
-    playRandomTune();
+    Pokitto::Core::update(0); // needed first to setup IRQ that I will 'borrow' for my own sound.
+    //playRandomTune();
+    
+    clearAudioBuffer(1);
+    clearAudioBuffer(2);
+    startSong("/joe2/flute.pcm");
 
     // set hardware volume quite low
-    SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
+//    SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
     //if(myVolume>64){myVolume=64;}
     //if(myVolume<0){myVolume=0;}
-    swvolpot.write(0x5e, myVolume);
+//    swvolpot.write(0x5e, myVolume);
 
     long int lastMillis;
+
+    long int titleTimer = PC::getTime();
 
     while( PC::isRunning() ){
         

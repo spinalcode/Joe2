@@ -7,32 +7,22 @@ int myVolume = 5;
 #define MAX_AMINS 20
 #define GEM_ANIM_SPEED 3
 
-//int myCounter=0;
-//uint32_t mySin[360];
-//int letter_frame=0;
-
-//bool clearScreen=false;
-//long int myDelay;
-//long int tempTime;
 uint8_t frameSkip;
 int fpsCount=0;
 long int fpsCounter;
-//long int lastMillis; // doesn't need to be global
-//bool screenMoving = false;
-//uint8_t line[255];
-//const uint16_t palette2[] = {0};
-//bool interlaceScreen = false;
+
 bool mustDrawTitleScreen=true;
 uint16_t pal[512]; // plasma palette for door
 uint8_t doorPalOffset=0;
 
-long int timerCounter=0;
-//uint16_t bgline_pal[92];
-//int lastCollectedX=0;
-//int lastCollectedY=0;
+uint8_t titleLine[176];
+//uint8_t titleRoll[]={4,6,8,10,11,12,12,13,13,14,14,14,14,15,15,15,15,15,15,14,14,14,14,13,13,12,12,11,10,8,6,4};
+//uint8_t titleRoll[]={4,6,8,10,11,12,12,13,13,14,14,14,14,15,15,15,15,15,15,16,16,16,16,17,17,18,18,19,20,22,24,26};
+uint8_t titleRoll[]={0,1,3,4,5,6,7,8,9,10,10,11,11,12,12,12,12,13,13,13,13,14,14,14,14,14,14,14,14,15,15,15,15,15,15,15,15,15,15,15,15,16,16,16,16,16,16,16,16,17,17,17,17,18,18,18,18,19,19,20,21,22,23,24,25,26};
+long int titleTimer = 0;
+uint8_t titleScratch=0;
 
-//const uint16_t emptyPalette[]={0};
-//const uint8_t blankLine[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+long int timerCounter=0;
 
 // for my own sprite renderer
 #define NUMSPRITES 64
@@ -201,10 +191,12 @@ int numGems=0;
 int levelNumber = 0;
 
 
-int HUD_gemTimer=0;
-int HUD_livesTimer=0;
 #define HUD_gemTimerStart 60;
-int HUD_gemFrameCount=0;
+#define HUD_wordTimerStart 60;
+uint8_t HUD_gemTimer=0;
+uint8_t HUD_wordTimer=0;
+uint8_t HUD_gemFrameCount=0;
+uint8_t HUD_wordFrameCount=0;
 
 // pointers to our data
 const uint8_t* levelData = nullptr;

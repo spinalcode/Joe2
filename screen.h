@@ -3,6 +3,36 @@
 #define bgTileSizeW 8
 #define tbt bgTileSizeH*bgTileSizeW
 
+static inline void sd(uint16_t data)
+{
+    SET_MASK_P2;
+    LPC_GPIO_PORT->MPIN[2] = (data<<3); // write bits to port
+    CLR_MASK_P2;
+}
+
+void wc(uint16_t data)
+{
+    CLR_CS; // select lcd
+    CLR_CD; // clear CD = command
+    SET_RD; // RD high, do not read
+    sd(data); // function that inputs the data into the relevant bus lines
+    CLR_WR_SLOW;  // WR low
+    SET_WR;  // WR low, then high = write strobe
+    SET_CS; // de-select lcd
+}
+
+void wd(uint16_t data)
+{
+    CLR_CS;
+    SET_CD;
+    SET_RD;
+    sd(data);
+    CLR_WR;
+    SET_WR;
+    SET_CS;
+}
+
+
 /*
      ______                 __                 _______                              
     |   __ \.-----.-----.--|  |.-----.----.   |     __|.----.----.-----.-----.-----.
