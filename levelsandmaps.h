@@ -112,7 +112,7 @@ void updateMap(int mx, int my, int levNum){
 }
 
 void initMap(int levNum){
-    char levelFilename[32];
+    char levelFilename[64];
     sprintf(levelFilename,"joe2/%02d.bin",levNum);
     File file1;
     if(file1.openRO(levelFilename)){
@@ -285,6 +285,7 @@ void loadLevel(int levNum){
                     items[maxItems].bitDepth = 8;
                     items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
                     maxItems++;
+
             }
         
             if(tl == tileType[9]){ // 9 = Bird - the third enemy
@@ -311,6 +312,22 @@ void loadLevel(int levNum){
                 printf("Doors %d:%d,%d\n", numDoors,exitDoor[numDoors].x,exitDoor[numDoors].y);
                 numDoors++;
             }
+            if(tl == tileType[12]){ // 12 = bonus gem
+                    items[maxItems].x = (x-1)*8;
+                    items[maxItems].y = y*8;
+                    items[maxItems].collected = 0;
+                    items[maxItems].speed = GEM_ANIM_SPEED;
+                    items[maxItems].frame = random(15*items[maxItems].speed);
+                    items[maxItems].startFrame = 0;
+                    items[maxItems].maxFrame = 15;
+                    items[maxItems].type = ((curTile >> 10)&31)-3; // gem
+                    items[maxItems].imageData = color_gem2[0];
+                    items[maxItems].paletteData = color_gem_pal;
+                    items[maxItems].bitDepth = 8;
+                    items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
+                    maxItems++;
+            }
+
             if(tl == tileType[13]){ // 13 = Letter J,O,E
                     items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;

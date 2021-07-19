@@ -169,6 +169,7 @@ void renderSprites(){
     drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], gamePalette.rgb, player.flip);
 
     // animating sprites - items etc.
+    int numAnimFrames = fpsCount/2;
     for(int t=MAX_AMINS; t; t--){
         if(animSprite[t].used==true){
             animSprite[t].frame++;
@@ -179,9 +180,9 @@ void renderSprites(){
             drawSprite(animSprite[t].x, animSprite[t].y, animSprite[t].imageData+(frame*(animSprite[t].frameSize)), animSprite[t].paletteData,0,4);
             //drawSprite(theX, theY, &items[t].imageData[frame*(2+items[t].frameSize)], items[t].paletteData, flipMe ,items[t].bitDepth);
 
-            animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, animSprite[t].endX, animSprite[t].startX-animSprite[t].endX, 20))+animSprite[t].endX;
-            animSprite[t].y = (animSprite[t].startY-easeInOut(animSprite[t].frameCount, animSprite[t].endY, animSprite[t].startY-animSprite[t].endY, 20))+animSprite[t].endY;
-            if(++animSprite[t].frameCount>=20){
+            animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, animSprite[t].endX, animSprite[t].startX-animSprite[t].endX, numAnimFrames))+animSprite[t].endX;
+            animSprite[t].y = (animSprite[t].startY-easeInOut(animSprite[t].frameCount, animSprite[t].endY, animSprite[t].startY-animSprite[t].endY, numAnimFrames))+animSprite[t].endY;
+            if(++animSprite[t].frameCount>=numAnimFrames){
                 animSprite[t].used = false;
                 if(animSprite[t].type>=10 && animSprite[t].type<=13){wordCollected[animSprite[t].type-10]=1;}
             }else{
@@ -222,6 +223,15 @@ void renderSprites(){
     bg.totalGemsCollected = bg.countRed+bg.countGreen+bg.countBlue;
 }
 
+void updateColours(){
+    float bigNum = bg.numRed+bg.numGreen+bg.numBlue;
+    float littleNum = bg.countRed+bg.countGreen+bg.countBlue;
+    float tempSat = littleNum/bigNum;
+    int percent = tempSat*100;
+    float satAmount = (float)satRamp[percent]/100;
+    reSaturate(satAmount,satAmount,satAmount);
+}
+
 
 void checkItemCollisions(){
     //items
@@ -242,8 +252,6 @@ void checkItemCollisions(){
                     if((player.x>>8)+player.centre >= items[t].x-4 && (player.x>>8)+player.centre <= items[t].x + 20){
                         if((player.y>>8)+player.centre >= items[t].y-items[t].offy-4 && (player.y>>8)+player.centre <= items[t].y-items[t].offy + 20){
 
-                            playSound(1, sfx_drop, 300, random(63)+192);
-
                             int theX = items[t].x-bg.mapX;
                             int theY = items[t].y-bg.mapY;
                             switch(items[t].type){
@@ -252,18 +260,24 @@ void checkItemCollisions(){
                                     //bg.satRed += bg.redPercent;
                                     bg.countRed++;
                                     items[t].collected = 1;
+                                    playSound(1, sfx_drop, 300, random(63)+192);
+                                    updateColours();
                                     break;
                                 case 2:
                                     startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
                                     //bg.satGreen += bg.greenPercent;
                                     bg.countGreen++;
                                     items[t].collected = 1;
+                                    playSound(1, sfx_drop, 300, random(63)+192);
+                                    updateColours();
                                     break;
                                 case 3:
                                     startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
                                     //bg.satBlue += bg.bluePercent;
                                     bg.countBlue++;
                                     items[t].collected = 1;
+                                    playSound(1, sfx_drop, 300, random(63)+192);
+                                    updateColours();
                                     break;
 
                                 case 10: // J/O/E
@@ -272,16 +286,10 @@ void checkItemCollisions(){
                                     startAnimation(theX, theY, 89+((items[t].type-10)*14) ,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, items[t].imageData, items[t].paletteData);
                                     items[t].collected = 1;
                                     //wordCollected[items[t].type-10]=1;
+                                    playSound(1, sfx_drop, 300, random(63)+192);
                                     break;
                             }
                             
-                            //reSaturate(bg.satRed,bg.satGreen,bg.satBlue);
-                            float bigNum = bg.numRed+bg.numGreen+bg.numBlue;
-                            float littleNum = bg.countRed+bg.countGreen+bg.countBlue;
-                            float tempSat = littleNum/bigNum;
-                            int percent = tempSat*100;
-                            float satAmount = (float)satRamp[percent]/100;
-                            reSaturate(satAmount,satAmount,satAmount);
                         }
                     }
                 }
@@ -674,10 +682,10 @@ int main(){
     startSong("/joe2/flute.pcm");
 
     // set hardware volume quite low
-//    SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
+    SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
     //if(myVolume>64){myVolume=64;}
     //if(myVolume<0){myVolume=0;}
-//    swvolpot.write(0x5e, myVolume);
+    swvolpot.write(0x5e, myVolume);
 
     long int lastMillis;
 
@@ -687,11 +695,11 @@ int main(){
         
         updateStream();
         if(frameSkip==0){
+            fpsCounter++;
             if( !PC::update() ) continue;
-            
         }else{
             PC::update(0); // don't update screen.
-            spriteCount=0;        
+            spriteCount=-1;        
         }
         frameSkip = 1-frameSkip;
 
@@ -707,18 +715,19 @@ int main(){
         }   
 
         updateButtons(); // update buttons
-        fpsCounter++;
+//        fpsCounter++;
 
         char tempText[64];
 
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,bg.screenBottom-8,tempText);
 
+
         //sprintf(tempText,"Hit:%d",checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.centre));
         //sprintf(tempText,"Hit:%d",sizeof(enemy1)/sizeof(enemy1[0]));
         //myPrint(0,bg.screenBottom-16,tempText);
 
-        
+        sprintf(tempText,"FPS:%d",PC::getTime()); // for some reason the fps timer doesn't work unless I do this.
         if(PC::getTime() >= lastMillis+1000){
             lastMillis = PC::getTime();
             fpsCount = fpsCounter;

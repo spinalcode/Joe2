@@ -1,3 +1,19 @@
+// pointers to our data
+const uint8_t* levelData = nullptr;
+const uint16_t* midmap = nullptr;
+const uint8_t* tiles = nullptr;
+const uint8_t* collisionTile = nullptr;
+
+// Make a hotswap area for level data
+// size = 72*1024k, unique id = 0
+//using LevelData = Hotswap<48*1024, 0>; // multiple of 8kb = Palette and level tiles
+using LevelData = Hotswap<56*1024, 0>; // multiple of 8kb = Palette and level tiles
+//using LevelData = Hotswap<64*1024, 0>; // multiple of 8kb = Palette and level tiles
+
+int lastLoad=0;
+int mapPos;
+
+uint16_t scanLine[220]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
 
 int myVolume = 5;
 
@@ -16,12 +32,9 @@ uint16_t pal[512]; // plasma palette for door
 uint8_t doorPalOffset=0;
 
 uint8_t titleLine[176];
-//uint8_t titleRoll[]={4,6,8,10,11,12,12,13,13,14,14,14,14,15,15,15,15,15,15,14,14,14,14,13,13,12,12,11,10,8,6,4};
-//uint8_t titleRoll[]={4,6,8,10,11,12,12,13,13,14,14,14,14,15,15,15,15,15,15,16,16,16,16,17,17,18,18,19,20,22,24,26};
 uint8_t titleRoll[]={0,1,3,4,5,6,7,8,9,10,10,11,11,12,12,12,12,13,13,13,13,14,14,14,14,14,14,14,14,15,15,15,15,15,15,15,15,15,15,15,15,16,16,16,16,16,16,16,16,17,17,17,17,18,18,18,18,19,19,20,21,22,23,24,25,26};
 long int titleTimer = 0;
 uint8_t titleScratch=0;
-
 long int timerCounter=0;
 
 // for my own sprite renderer
@@ -35,7 +48,7 @@ struct SPRITE_DATA {
     int offset; // tile render pixel offset
     uint8_t bit;
 } sprites[NUMSPRITES];
-int spriteCount = 0;
+int spriteCount = -1;
 
 struct ANIMATION_DATA {
     const uint16_t *paletteData; // palette data
@@ -198,19 +211,6 @@ uint8_t HUD_wordTimer=0;
 uint8_t HUD_gemFrameCount=0;
 uint8_t HUD_wordFrameCount=0;
 
-// pointers to our data
-const uint8_t* levelData = nullptr;
-const uint16_t* midmap = nullptr;
-const uint8_t* tiles = nullptr;
-const uint8_t* collisionTile = nullptr;
-
-// Make a hotswap area for level data
-// size = 72*1024k, unique id = 0
-using LevelData = Hotswap<72*1024, 0>; // multiple of 4kb = Palette and level tiles
-
-int lastLoad=0;
-
-int mapPos;
 
 
 

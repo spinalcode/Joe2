@@ -37,7 +37,7 @@
 			"-ggdb"
 		],
 		"RELEASE": [
-			"-O3"
+			"-Os"
 		],
 		"Pokitto": [
 			"-D_OSCT=2",
@@ -127,7 +127,7 @@
 			"-ggdb"
 		],
 		"RELEASE": [
-			"-O3"
+			"-Os"
 		],
 		"Pokitto": [
 			"-D_OSCT=2",
@@ -218,7 +218,7 @@
 	},
 	"LDFlags": {
 		"RELEASE": [
-			"-O3"
+			"-Os"
 		],
 		"DEBUG": [
 			"-Og",
@@ -299,106 +299,110 @@
 		"windows": "Desktop"
 	},
 	"meta": {
-		"!Joe_2.bin": {},
-		"!Joe_2.elf": {},
 		"!Joe_2_alpha_2021_06_23.zip": {},
+		"!Joe_2.elf": {},
+		"!Joe_2.bin": {},
 		"!Joe_2.eeprom": {},
 		"background.h": {},
 		"font.h": {},
-		"buttonhandling.h": {},
-		"easing.h": {},
 		"globals.h": {},
+		"easing.h": {},
+		"buttonhandling.h": {},
+		"credits.h": {},
 		"levelsandmaps.h": {},
 		"main.cpp": {},
-		"Joe_2_Pre-Beta_2021_06_20.zip": {},
-		"music": {
-			"sdcard": true
-		},
-		"Joe_2_alpha.zip": {},
 		"joe2": {
 			"sdcard": true
 		},
+		"Joe_2_alpha.zip": {},
+		"music": {
+			"sdcard": true
+		},
+		"Joe_2_Pre-Beta_2021_06_20.zip": {},
 		"raw": {},
 		"project.json": {},
 		"My_settings.h": {},
 		"samples.h": {},
-		"screen.h": {},
 		"scripts": {},
-		"sprites.h": {},
+		"screen.h": {},
 		"sound.h": {},
+		"sprites.h": {},
+		"palette.bin": {},
+		"titlescreen.h": {},
 		"": {},
-		"music/tiletest": {},
-		"joe2/C_8000.pcm": {},
-		"joe2/door.raw": {},
-		"joe2/01data.bin": {},
+		"joe2/Chiptronical.pcm": {},
 		"joe2/01.bin": {},
+		"joe2/01data.bin": {},
+		"joe2/C_6000.pcm": {},
+		"joe2/C_8000.pcm": {},
+		"joe2/C_11025.pcm": {},
 		"joe2/door1.raw": {
 			"sdcard": true
 		},
-		"joe2/door1.raw.bak": {},
+		"joe2/C_1600.pcm": {},
 		"joe2/levelstuff.txt": {},
+		"joe2/door.raw": {},
 		"joe2/titlescreen.bmp": {
 			"sdcard": true
 		},
+		"joe2/flute.pcm": {
+			"sdcard": true
+		},
+		"music/tiletest": {},
+		"joe2/scratch.pcm": {
+			"sdcard": true
+		},
+		"raw/133726__ephemeral-rift__native-american-flute-in-d-minor-and-stream.mp3": {},
+		"raw/160909__racche__scratch-speed.wav": {},
 		"raw/16x16.gif": {},
 		"raw/16x16.h": {},
+		"raw/269476__kwahmah-02__clean-record-scratch.flac": {},
 		"joe2/titlescreen.psp": {},
+		"raw/bluegem.bmp": {},
+		"raw/bonus_room.bmp": {},
 		"raw/64x64.gif": {},
 		"raw/64x64.h": {},
-		"raw/bonus_room.bmp": {},
 		"raw/color_sprite.bmp": {},
-		"raw/bluegem.bmp": {},
-		"raw/color_gem.bmp": {},
 		"raw/door.bmp": {},
 		"raw/dooranim.bmp": {},
-		"raw/enemy1.bmp": {},
+		"raw/color_gem.bmp": {},
 		"raw/door_01.bmp": {},
 		"raw/color_sprite_w.bmp": {},
+		"raw/enemy1.bmp": {},
+		"raw/enemy3.bmp": {},
 		"raw/font88.bmp": {},
 		"raw/font88solid.bmp": {},
-		"raw/enemy2.bmp": {},
-		"raw/enemy3.bmp": {},
 		"raw/gem.bmp": {},
+		"raw/enemy2.bmp": {},
 		"raw/Image1.bmp": {},
 		"raw/gems.bmp": {},
 		"raw/img2pok.exe": {},
 		"raw/greengem.bmp": {},
 		"raw/Image6.bmp": {},
-		"raw/j_letter.bmp": {},
 		"raw/joe2sprites.pal": {},
-		"raw/letter_j.h": {},
+		"raw/j_letter.bmp": {},
 		"raw/jszip.js": {},
-		"raw/Newtonsoft.Json.dll": {},
+		"raw/letter_j.h": {},
 		"raw/palette.bmp": {},
+		"raw/Newtonsoft.Json.dll": {},
 		"raw/palette_joe2.bmp": {},
+		"raw/roll.bmp": {},
 		"raw/player_sprite.bmp": {},
 		"raw/redgem.bmp": {},
-		"raw/token.bmp": {},
-		"raw/roll.bmp": {},
-		"raw/_img2pok.exe": {},
 		"raw/ruby.psp": {},
-		"raw/watt32.pal": {},
-		"scripts/midmap.bin": {},
 		"raw/testPalette.bmp": {},
+		"raw/token.bmp": {},
+		"raw/_img2pok.exe": {},
+		"raw/watt32.pal": {},
 		"scripts/collisionTile.bin": {},
+		"scripts/midmap.bin": {},
 		"scripts/ModConverter.js": {},
-		"scripts/palette.bin": {},
-		"scripts/tilemap.bin": {},
 		"scripts/TilemapConverter.js": {},
 		"scripts/tiles.bin": {},
+		"scripts/palette.bin": {},
+		"scripts/tilemap.bin": {},
 		"music/tiletest/DKCJH2.pcm": {},
-		"music/tiletest/DKCJH.pcm": {},
-		"raw/133726__ephemeral-rift__native-american-flute-in-d-minor-and-stream.mp3": {},
-		"joe2/flute.pcm": {
-			"sdcard": true
-		},
-		"joe2/flute.pk": {},
-		"raw/160909__racche__scratch-speed.wav": {},
-		"joe2/scratch.pcm": {
-			"sdcard": true
-		},
-		"raw/269476__kwahmah-02__clean-record-scratch.flac": {},
-		"joe2/C_8000.pk": {}
+		"music/tiletest/DKCJH.pcm": {}
 	},
 	"BUILDFlags": {
 		"Pokitto": {}

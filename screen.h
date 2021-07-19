@@ -3,34 +3,8 @@
 #define bgTileSizeW 8
 #define tbt bgTileSizeH*bgTileSizeW
 
-static inline void sd(uint16_t data)
-{
-    SET_MASK_P2;
-    LPC_GPIO_PORT->MPIN[2] = (data<<3); // write bits to port
-    CLR_MASK_P2;
-}
-
-void wc(uint16_t data)
-{
-    CLR_CS; // select lcd
-    CLR_CD; // clear CD = command
-    SET_RD; // RD high, do not read
-    sd(data); // function that inputs the data into the relevant bus lines
-    CLR_WR_SLOW;  // WR low
-    SET_WR;  // WR low, then high = write strobe
-    SET_CS; // de-select lcd
-}
-
-void wd(uint16_t data)
-{
-    CLR_CS;
-    SET_CD;
-    SET_RD;
-    sd(data);
-    CLR_WR;
-    SET_WR;
-    SET_CS;
-}
+void inline bgTileLine2();
+void inline bgTileLine();
 
 
 /*
@@ -62,185 +36,235 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
         return;
     }
 
-    #define leftOffset 64 // add space either side of the screen buffer
-
-    uint16_t scanLine[leftOffset + 220 + leftOffset];
-
-    if(spriteCount>1){
-
+    if(spriteCount>=0){
+        uint8_t offset = 0;
         for(uint8_t spriteIndex = spriteCount; spriteIndex>1; spriteIndex--){
             auto & sprite = sprites[spriteIndex];
-            uint8_t spriteWidth = sprite.imageData[0];
-            uint8_t spriteHeight = sprite.imageData[1];
+            if(y >= sprite.y && y < sprite.y + sprite.imageData[1]){
+                if(sprite.x>-sprite.imageData[0] && sprite.x<PROJ_LCDWIDTH){
+                    int startPos = sprite.x;
+                    switch(sprite.bit){
+                        case 8:{
+                            sprite.offset = 2+(sprite.imageData[0] * (y-sprite.y));
+                            int pixelPos = sprite.x;
+                            if(sprite.hFlip){
+                                for(offset=0; offset < sprite.imageData[0]; offset++){
+                                    int pixPos = sprite.imageData[0] + sprite.x - offset;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = sprite.imageData[sprite.offset];
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    sprite.offset++;
+                                }
+                            }else{
+                                for(offset=0; offset < sprite.imageData[0]; offset++){
+                                    int pixPos = sprite.x + offset;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = sprite.imageData[sprite.offset];
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    sprite.offset++;
+                                }
+                            }
+                            break;
+                        } // case 8
+                        case 4:{
+                            sprite.offset = 2+((sprite.imageData[0]/2) * (y-sprite.y));
+                            int pixelPos = sprite.x;
+                            if(sprite.hFlip){
+                                for(offset=0; offset < sprite.imageData[0];){
+                                    int pixPos = sprite.imageData[0] + sprite.x - offset;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = sprite.imageData[sprite.offset]>>4;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    offset++;
+                                    pixPos--;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = sprite.imageData[sprite.offset]&15;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    sprite.offset++;
+                                    offset++;
+                                }
+                            }else{
+                                for(offset=0; offset < sprite.imageData[0];){
+                                    int pixPos = sprite.x + offset;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = sprite.imageData[sprite.offset]>>4;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    offset++;
+                                    pixPos++;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = sprite.imageData[sprite.offset]&15;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    sprite.offset++;
+                                    offset++;
+                                }
+                            }
+                            break;
+                        } // case 4
+                        case 2:{
+                            sprite.offset = 2+((sprite.imageData[0]/4) * (y-sprite.y));
+                            int pixelPos = sprite.x;
+                            if(sprite.hFlip){
+                                for(offset=0; offset < sprite.imageData[0];){
+                                    int pixPos = sprite.imageData[0] + sprite.x - offset;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = sprite.imageData[sprite.offset]>>6;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    offset++;
+                                    pixPos--;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = (sprite.imageData[sprite.offset]>>4)&3;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    pixPos--;
+                                    offset++;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = (sprite.imageData[sprite.offset]>>2)&3;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    offset++;
+                                    pixPos--;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = sprite.imageData[sprite.offset]&3;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    sprite.offset++;
+                                    offset++;
+                                }
+                            }else{
+                                for(offset=0; offset < sprite.imageData[0];){
+                                    int pixPos = sprite.x + offset;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = sprite.imageData[sprite.offset]>>6;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    offset++;
+                                    pixPos++;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = (sprite.imageData[sprite.offset]>>4)&3;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    offset++;
+                                    pixPos++;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = (sprite.imageData[sprite.offset]>>2)&3;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    offset++;
+                                    pixPos++;
+                                    if(pixPos>=0 && pixPos<=PROJ_LCDWIDTH){
+                                        if(scanLine[pixPos]==0){
+                                            uint8_t thisPixel = sprite.imageData[sprite.offset]&3;
+                                            uint16_t colour = sprite.paletteData[thisPixel];
+                                            if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
+                                            if(thisPixel>0) scanLine[pixPos] = colour;
+                                        }
+                                    }
+                                    sprite.offset++;
+                                    offset++;
+                                }
+                            }
+                            break;
+                        } // case 2
 
-            if(y >= sprite.y && y < sprite.y + spriteHeight){
-                if(sprite.x>=-spriteWidth && sprite.x<PROJ_LCDWIDTH){
-    
-                    if(sprite.bit==8){
-                        sprite.offset = 2+(spriteWidth * (y-sprite.y));
-                        if(sprite.hFlip){
-                            for(uint8_t offset = 0; offset < spriteWidth; offset++){
-                                if(scanLine[leftOffset + sprite.x + spriteWidth - offset]==0){
-                                    uint8_t thisPixel = sprite.imageData[sprite.offset];
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x + spriteWidth - offset] = colour;
-                                }
-                                sprite.offset++;
-                            }
-                        }else{
-                            for(uint8_t offset = 0; offset < spriteWidth; offset++){
-                                if(scanLine[leftOffset + sprite.x + offset]==0){
-                                    uint8_t thisPixel = sprite.imageData[sprite.offset];
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x + offset] = colour;
-                                }
-                                sprite.offset++;
-                            }
-                        }
                     }
 
-                    else if(sprite.bit==4){
-                        sprite.offset = 2+((spriteWidth/2) * (y-sprite.y));
-                        if(sprite.hFlip){
-                            for(uint8_t offset = 0; offset < spriteWidth;){
-                                if(scanLine[leftOffset + sprite.x + spriteWidth - offset]==0){
-                                    uint8_t thisPixel = sprite.imageData[sprite.offset]>>4;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x + spriteWidth - offset] = colour;
-                                }
-                                offset++;
-                                if(scanLine[leftOffset + sprite.x + spriteWidth - offset]==0){
-                                    uint8_t thisPixel = sprite.imageData[sprite.offset]>>4;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x + spriteWidth - offset] = colour;
-                                }
-                                offset++;
-                                sprite.offset++;
-                            }
-                        }else{
-                            for(uint8_t offset = 0; offset < spriteWidth;){
-                                if(scanLine[leftOffset + sprite.x + offset]==0){
-                                    uint8_t thisPixel = sprite.imageData[sprite.offset]>>4;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x + offset] = colour;
-                                }
-                                offset++;
-                                if(scanLine[leftOffset + sprite.x + offset]==0){
-                                    uint8_t thisPixel = sprite.imageData[sprite.offset]&15;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x + offset] = colour;
-                                }
-                                offset++;
-                                sprite.offset++;
-                            }
-                        }
-                    }
+                } // if X
+            } // if Y
+        } // for spriteCount
 
-                    else if(sprite.bit==2){
-                        sprite.offset = 2+((spriteWidth/4) * (y-sprite.y));
-                        if(sprite.hFlip){
-                            for(uint8_t offset = 0; offset < spriteWidth;){
-                                if(scanLine[leftOffset + sprite.x + spriteWidth - offset]==0){
-                                    uint8_t thisPixel = sprite.imageData[sprite.offset]>>6;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x +  spriteWidth -offset] = colour;
-                                }
-                                offset++;
-                                if(scanLine[leftOffset + sprite.x + spriteWidth - offset]==0){
-                                    uint8_t thisPixel = (sprite.imageData[sprite.offset]>>4)&3;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x +  spriteWidth -offset] = colour;
-                                }
-                                offset++;
-                                if(scanLine[leftOffset + sprite.x + spriteWidth - offset]==0){
-                                    uint8_t thisPixel = (sprite.imageData[sprite.offset]>>2)&3;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x +  spriteWidth -offset] = colour;
-                                }
-                                offset++;
-                                if(scanLine[leftOffset + sprite.x + spriteWidth - offset]==0){
-                                    uint8_t thisPixel = (sprite.imageData[sprite.offset])&3;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x +  spriteWidth -offset] = colour;
-                                }
-                                offset++;
-                                sprite.offset++;
-                            }
-                        }else{
-                            for(uint8_t offset = 0; offset < spriteWidth;){
-                                if(scanLine[leftOffset + sprite.x + offset]==0){
-                                    uint8_t thisPixel = sprite.imageData[sprite.offset]>>6;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x + offset] = colour;
-                                }
-                                offset++;
-                                if(scanLine[leftOffset + sprite.x + offset]==0){
-                                    uint8_t thisPixel = (sprite.imageData[sprite.offset]>>4)&3;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x + offset] = colour;
-                                }
-                                offset++;
-                                if(scanLine[leftOffset + sprite.x + offset]==0){
-                                    uint8_t thisPixel = (sprite.imageData[sprite.offset]>>2)&3;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x + offset] = colour;
-                                }
-                                offset++;
-                                if(scanLine[leftOffset + sprite.x + offset]==0){
-                                    uint8_t thisPixel = (sprite.imageData[sprite.offset])&3;
-                                    uint16_t colour = sprite.paletteData[thisPixel];
-                                    if(colour==0){colour = 1;} // can't have a zero value or it will be transparent
-                                    if(thisPixel>0) scanLine[leftOffset + sprite.x + offset] = colour;
-                                }
-                                offset++;
-                                sprite.offset++;
-                            }
-                        }
-                    }
+    } // sprite count >1
 
-      
-                }
-            }
-        }
-    }
+    auto Palette = &Pokitto::Display::palette[0];
+    auto Line = &line[0];
 
-
-    uint16_t tempPal[512];
-    auto lineP = &tempPal[0];
-    auto lineT = &line[0];
-    uint32_t px=32;
-    uint32_t py = y/8;
-    for(uint8_t x=0; x<220; x++){
-        if(x%8==0){if(--px==0)px=32;}
-        uint16_t colorIndex = *lineT;
-        if(scanLine[leftOffset + x]){
-            colorIndex = scanLine[leftOffset + x];
-            if(!colorIndex) colorIndex = *lineT;
-            scanLine[leftOffset + x]=0;
-            *lineP++ = colorIndex;
-        }else{
-            if(*lineT==0 && bg.totalGemsCollected == bg.totalGemsToCollect){
-                *lineP++ = pal[doorPalOffset + sprite_door[450+(px+32*py)]];
+    if(bg.totalGemsCollected == bg.totalGemsToCollect){
+        uint32_t px=32;
+        uint32_t py = y/8;
+        for(uint32_t x=0; x<220; x++){
+            if((x&7)==0){if(--px==0)px=32;}
+            if(scanLine[x]!=0){
+                *Palette++ = scanLine[x];
+                scanLine[x] = 0;
             }else{
-                *lineP++ = gamePalette.rgb[colorIndex];
+                if(*Line==0)
+                    *Palette++ = pal[doorPalOffset + sprite_door[450+(px+32*py)]];
+                else
+                    *Palette++ = gamePalette.rgb[*Line];
             }
+            *Line++ = x;
         }
-        *lineT++ = x;
+    }else{
+        for(uint32_t x=0; x<220; x++){
+            if(scanLine[x]!=0){
+                *Palette++ = scanLine[x];
+                scanLine[x] = 0;
+            }else{
+                *Palette++ = gamePalette.rgb[*Line];
+            }
+            *Line++ = x;
+        }
     }
-    loadPalette(tempPal, 220); // load first 220 colours into palette, nore more than that needed.
+
+    Pokitto::Display::paletteptr = Pokitto::Display::palette;
 
     return;
 }
@@ -355,6 +379,7 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
     //if(clearScreen==true) memset(&line[0], 10, 220);
 
 }
+
 
 void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
 
