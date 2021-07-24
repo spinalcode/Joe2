@@ -1,4 +1,5 @@
 
+
 void titleScreen(){
 
     if(Pokitto::Core::getTime() > titleTimer+6000){
@@ -38,14 +39,17 @@ void titleScreen(){
             Pokitto::Display::load565Palette(gamePalette.rgb);
 
             uint8_t buff[220];
+
             Pokitto::lcdPrepareRefresh();
             int mainData = 1024+54; // main bitmap data in file
 
-            int tMinus = sizeof(titleRoll);
-                for(int y=0; y<176; y++){
-                    titleLine[y] = y;
-                }
-            for(int top=176+tMinus; top>=-tMinus; top-=2){
+            int rollSize = sizeof(titleRoll);
+            for(int y=0; y<176; y++){
+                titleLine[y] = y;
+            }
+            int tempTime=Pokitto::Core::getTime();
+            for(int top=176+rollSize; top>=-(rollSize+3); top-=1){
+                
                 /*
                 updateButtons(); // update buttons
                 if(_A_But[NEW]){
@@ -53,25 +57,48 @@ void titleScreen(){
                     updateButtons(); // update buttons
                 }
                 */
-                
-                for(int t=top; t<top+tMinus-1; t++){
+/*                
+                for(int t=top; t<top+rollSize-1; t++){
                     int p = t+titleRoll[t-top];
                     if(p>176) p-=176;
                     if(top-(t-top) >0 && top-(t-top) <176)
                         titleLine[top-(t-top)] = p;
                 }
-                
-                for(int y=top-tMinus+2; y<=top+2; y+=2){
-                    Pokitto::setDRAMpoint(0, y);
-                    SET_MASK_P2;
+*/                
+
+                for(int t=top; t<top+rollSize-1; t++){
+                    int p = t+titleRoll[t-top];
+                    if(p>=176) p-=176;
+                    int s = top-(t-top);
+                    if(s >0 && s <176)
+                        titleLine[s] = p;
+                }
+
+                for(int y=top-rollSize+2; y<top; y++){
+                    Pokitto::setDRAMpoint(0, y); SET_MASK_P2;
                     if(y>=0 && y<176){
                         tsFile.seek(mainData+(220*titleLine[y]));
                         tsFile.read(buff, 220);
                         flushLine(Pokitto::Display::palette, buff);
-                        tsFile.read(buff, 220);
-                        flushLine(Pokitto::Display::palette, buff);
                     }
                 }
+/*                
+                if(top>=0 && top <=173){
+                    tsFile.seek(mainData+(220*titleLine[top]));
+                    tsFile.read(buff, 220);
+                    flushLine(Pokitto::Display::palette, buff);
+                    tsFile.read(buff, 220);
+                    flushLine(Pokitto::Display::palette, buff);
+                    tsFile.read(buff, 220);
+                    flushLine(Pokitto::Display::palette, buff);
+                }
+*/
+/*                
+                while(Pokitto::Core::getTime() < tempTime+125){
+                    Pokitto::Display::update();
+                }
+                tempTime=Pokitto::Core::getTime();
+*/
                 Pokitto::Display::update(); // needed?
                 updateStream(); // keep the sound going
             }

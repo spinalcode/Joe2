@@ -13,7 +13,8 @@ using LevelData = Hotswap<56*1024, 0>; // multiple of 8kb = Palette and level ti
 int lastLoad=0;
 int mapPos;
 
-uint16_t scanLine[220]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
+#define PRESCAN 88 // left side of scanline that is off screen
+uint16_t scanLine[440]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
 
 int myVolume = 5;
 
@@ -194,7 +195,7 @@ int gameMode=0;
 
 struct PALETTE_DATA {
     uint16_t rgb[256]; // background palette
-    uint16_t hpal[100]; // background palette for scanline effect
+    uint16_t hpal[100]; // background palette for scanline effect in the sky
 } gamePalette;
 //double saturation = 0;
 
@@ -212,6 +213,38 @@ uint8_t HUD_gemFrameCount=0;
 uint8_t HUD_wordFrameCount=0;
 
 
+const uint8_t plasmaScreen[] ={
+0,0,0,0,0,0,0,0,
+1,1,1,1,1,1,1,1,
+2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,
+4,4,4,4,4,4,4,4,
+5,5,5,5,5,5,5,5,
+6,6,6,6,6,6,6,6,
+7,7,7,7,7,7,7,7,
+8,8,8,8,8,8,8,8,
+9,9,9,9,9,9,9,9,
+10,10,10,10,10,10,10,10,
+11,11,11,11,11,11,11,11,
+12,12,12,12,12,12,12,12,
+13,13,13,13,13,13,13,13,
+14,14,14,14,14,14,14,14,
+15,15,15,15,15,15,15,15,
+16,16,16,16,16,16,16,16,
+17,17,17,17,17,17,17,17,
+18,18,18,18,18,18,18,18,
+19,19,19,19,19,19,19,19,
+20,20,20,20,20,20,20,20,
+21,21,21,21,21,21,21,21,
+22,22,22,22,22,22,22,22,
+23,23,23,23,23,23,23,23,
+24,24,24,24,24,24,24,24,
+25,25,25,25,25,25,25,25,
+26,26,26,26,26,26,26,26,
+27,27,27,27,27,27,27,27,
+28,28,28,28,28,28,28,28,
+29,29,29,29,29,29,29,29,
+};
 
 
 

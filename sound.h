@@ -5,7 +5,7 @@ bool playSFX;
 bool playBGM;
 File musicFile;
 File sfxFile;
-int LISTENINGSAMPLERATE = 8000;
+int LISTENINGSAMPLERATE = 6000;
 bool streamMusic = 1;
 
 const char* folderName = "/joe2/";
