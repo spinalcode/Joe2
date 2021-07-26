@@ -37,6 +37,19 @@ uint8_t titleRoll[]={0,1,3,4,5,6,7,8,9,10,10,11,11,12,12,12,12,13,13,13,13,14,14
 long int titleTimer = 0;
 uint8_t titleScratch=0;
 long int timerCounter=0;
+uint16_t playerSpritePal[16];
+int numLives = 0;
+
+// Death Animation thingy
+uint8_t playerDying = 0;
+uint8_t playerDeathFrame=0;
+uint8_t playerDeathFrames[] = {9,9,10,10,11,11,12,12,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13};
+uint8_t playerDeathHatFrame[]={6,14,6,6,6};
+uint8_t playerDeathHatX[]={0,1,1,1,1};
+uint8_t playerDeathHatY[]={1,1,2,3,3};
+uint8_t playerDeathHatFlip[]={0,0,1,1,1};
+uint8_t invincibleFrames = 80; // how many frame sto remain invincible
+uint8_t invincibleCount;
 
 // for my own sprite renderer
 #define NUMSPRITES 64
@@ -187,6 +200,7 @@ int screenX = 0;
 int screenY = 0;
 int oldScreenX = screenX;
 int oldScreenY = screenY;
+int starCount=0;
 
 //int offsetAngle = 0;
 //int sprite_anim_frame=0;

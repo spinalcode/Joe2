@@ -28,18 +28,8 @@ void clearPalette(int numColours) {
 }
 
 
-void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
 
-    // This is probably quite slow and will need some work.
-
-    if(y<bg.screenTop+1 || y>=bg.screenBottom){
-        clearPalette(256);
-        return;
-    }
-
-//    uint16_t scanLine[440];
-//    memset(scanLine,0,440);
-
+void spritesToLine(std::uint32_t y){
     if(spriteCount>=0){
         uint8_t offset = 0;
         for(uint8_t spriteIndex = 0; spriteIndex<spriteCount; spriteIndex++){
@@ -185,7 +175,7 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
                             break;
                         } // case 2
                         case 1:{
-                            sprite.offset = 2+((sprite.imageData[0]/4) * (y-sprite.y));
+                            sprite.offset = 2+((sprite.imageData[0]/8) * (y-sprite.y));
                             int pixelPos = sprite.x;
                             if(sprite.hFlip){
                                 for(offset=0; offset < sprite.imageData[0];){
@@ -278,15 +268,24 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
                             }
                             break;
                         } // case 1
-
-
                     }
-
                 } // if X
             } // if Y
         } // for spriteCount
-
     } // sprite count >1
+}
+
+
+void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
+
+    // This is probably quite slow and will need some work.
+
+    if(y<bg.screenTop+1 || y>=bg.screenBottom){
+        clearPalette(256);
+        return;
+    }
+
+    spritesToLine(y);
 
     auto Palette = &Pokitto::Display::palette[0];
     auto Line = &line[0];
@@ -309,14 +308,26 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
                 else\
                     *Palette++ = rgbPalette[*Line];\
             }\
-            *Line++ = x++;\
-            *ScanLine++ = 0;
+            *ScanLine++ = 0;\
+            *Line++ = x++;
 
+/*
+        #define SixteenBitLine1()\
+            if(ScanLine[x]!=0){\
+                Palette[x] = ScanLine[x];\
+                ScanLine[x] = 0;\
+            }else{\
+                if(Line[x]==0)\
+                    Palette[x] = offsetedPal[spriteSource[plasmaScreen[x]]];\
+                else\
+                    Palette[x] = rgbPalette[Line[x]];\
+            }\
+            Line[x++] = x;
+*/
         for(uint32_t x=0; x<220;){
             SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1();
             SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1();
-            SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1();
-            SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1();
+            SixteenBitLine1();
         }
     }else{
         #define SixteenBitLine2()\
@@ -325,16 +336,35 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
             }else{\
                 *Palette++ = rgbPalette[*Line];\
             }\
-            *Line++ = x++;\
-            *ScanLine++ = 0;
+            *ScanLine++ = 0;\
+            *Line++ = x++;
+
+/*
+            x--;\
+            if(ScanLine[x]!=0){\
+                Palette[x] = ScanLine[x];\
+                ScanLine[x] = 0;\
+            }else{\
+                Palette[x] = rgbPalette[Line[x]];\
+            }\
+            Line[x] = x;
+*/
 
         for(uint32_t x=0; x<220;){
-            SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2();
-            SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2();
-            SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2();
-            SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2();
+            SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); 
+            SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); 
+            SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); 
+/*
+            x--;
+            if(ScanLine[x]!=0){
+                Palette[x] = ScanLine[x];
+                ScanLine[x] = 0;
+            }else{
+                Palette[x] = rgbPalette[Line[x]];
+            }
+            Line[x] = x;
+*/
         }
-
     }
 
     Pokitto::Display::paletteptr = Pokitto::Display::palette;

@@ -120,7 +120,8 @@ void startAnimation(int x, int y, int x1, int y1, int speed, int itemType, int s
 }
 
 void renderSprites(){
-    
+
+
     if(bg.totalGemsCollected == bg.totalGemsToCollect){
         for(int t=0; t<numDoors; t++){
             drawSprite(exitDoor[t].x-bg.mapX, exitDoor[t].y-bg.mapY, sprite_door, &pal[doorPalOffset],0,8);
@@ -166,9 +167,30 @@ void renderSprites(){
         }
     }
     
-    // player sprite
-    drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[player.frame], gamePalette.rgb, player.flip);
-    drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], gamePalette.rgb, player.flip);
+    
+    if(playerDying==0 || playerDying==2){
+        if(invincibleCount%4==0 || playerDying==0){
+            // player sprite
+            drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[player.frame], playerSpritePal, player.flip, 4);
+            drawSprite((player.x>>8)-bg.mapX-player.hatX, (player.y>>8)-bg.mapY-player.hatY, player_sprite[player.hatFrame], playerSpritePal, player.flip, 4);
+        }
+    }else{
+        // play the death animation
+        drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[playerDeathFrames[playerDeathFrame]], playerSpritePal, player.flip, 4);
+        int flipHat = playerDeathHatFlip[playerDeathFrames[playerDeathFrame]-9];
+        if(player.flip) flipHat = 1-flipHat;
+        drawSprite((player.x>>8)-bg.mapX-player.hatX + playerDeathHatX[playerDeathFrames[playerDeathFrame]-9] -(player.flip*2), (player.y>>8)-bg.mapY-player.hatY + playerDeathHatX[playerDeathFrames[playerDeathFrame]-9], player_sprite[playerDeathHatFrame[playerDeathFrames[playerDeathFrame]-9]], playerSpritePal, flipHat , 4);
+        // stars
+        drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY -5, stars[starCount], stars_pal,0,1);
+        if(++starCount>=37)starCount=0;
+
+        playerDeathFrame++;
+        if(playerDeathFrame>=sizeof(playerDeathFrames)){
+            invincibleCount=0;
+            playerDeathFrame=0;
+            playerDying=2;
+        }
+    }
 
     // animating sprites - items etc.
     int numAnimFrames = fpsCount/2;
@@ -282,6 +304,14 @@ void checkItemCollisions(){
                                     updateColours();
                                     break;
 
+                                case 4:
+                                case 5:
+                                case 6:
+                                    if(invincibleCount==0){
+                                        playerDying=1;
+                                    }
+                                    break;
+
                                 case 10: // J/O/E
                                 case 11: // J/O/E
                                 case 12: // J/O/E
@@ -316,68 +346,79 @@ void gameLogic(){
     //if(_Up_But[NEW]){ myVolume++;}
     //if(_Down_But[NEW]){ myVolume--;}
 
-    if(_Left_But[NEW]){ player.flip = 1;}
-    if(_Right_But[NEW]){ player.flip = 0;}
-
-    if( _Left_But[RELEASED] || _Right_But[RELEASED]){
-        player.frame = 0;
-        player.step = 0;
-    }
-
-//    if(_B_But[HELD] && (_Left_But[HELD] || _Right_But[HELD])){player.speed +=8;}else{player.speed -=16;}
-
-    if(_B_But[HELD]){player.speed =PLAYER_SPEED*1.5;}else{player.speed = PLAYER_SPEED;}
-
-    //player.x += (_Right_But[HELD] - _Left_But[HELD]) * MAXSPEED;
-    if(_Right_But[HELD]){
-        while(rightCollision(player.x>>8, player.y>>8)==SOLID && rightCollision((player.x>>8)+1, (player.y>>8)-8)==SOLID){
-            player.x -= 128;
+    if(playerDying == 2){
+        invincibleCount++;
+        if(invincibleCount >= invincibleFrames){
+            invincibleCount=0;
+            playerDying=0;
         }
-        player.x += player.speed;
-        if(frameSkip==0){player.step ++;}
     }
 
-    if(_Left_But[HELD]){
-        while(leftCollision(player.x>>8, player.y>>8)==SOLID && leftCollision((player.x>>8)-1, (player.y>>8)-8)==SOLID){
-            player.x += 128;
-        }
-        player.x -= player.speed;
-        if(frameSkip==0){player.step ++;}
-    }
+    if(playerDying == 0 || playerDying == 2){
 
-    if (player.step >= 2) {
-        player.frame++;
-        player.step = 0;
-    }
-
-    if (player.frame >= 4) {
-        player.frame = 0;
-    }
-
-    if(_Down_But[NEW]){
-        player.dropping = true;
-    }
-
-    if(_Up_But[NEW]){
-        bool moved=false;
-        for(int t=0; t<numDoors; t++){
-            if((player.x>>8)+player.centre >= exitDoor[t].x && (player.x>>8)+player.centre <= exitDoor[t].x + sprite_door[0]){
-                if((player.y>>8)+player.centre >= exitDoor[t].y && (player.y>>8)+player.centre <= exitDoor[t].y + sprite_door[1]){
-                    
-                    // bg.totalGemsCollected == bg.totalGemsToCollect
-                    // hidden room
-                    if(moved==false){
-                        moved = true;
-                        int toDoor = t+1;
-                        if(toDoor == numDoors)toDoor=0;
-                        //printf("Door:%d\n",toDoor); // not printing?
-                        player.x = exitDoor[toDoor].x<<8;
-                        player.y = exitDoor[toDoor].y<<8;
+            //if(_Left_But[NEW]){ player.flip = 1;}
+            //if(_Right_But[NEW]){ player.flip = 0;}
+        
+            if( _Left_But[RELEASED] || _Right_But[RELEASED]){
+                player.frame = 0;
+                player.step = 0;
+            }
+        
+            if(_B_But[HELD]){player.speed =PLAYER_SPEED*1.5;}else{player.speed = PLAYER_SPEED;}
+        
+            if(_Right_But[HELD]){
+                player.flip = 0;
+                while(rightCollision(player.x>>8, player.y>>8)==SOLID && rightCollision((player.x>>8)+1, (player.y>>8)-8)==SOLID){
+                    player.x -= 128;
+                }
+                player.x += player.speed;
+                if(frameSkip==0){player.step ++;}
+            }
+        
+            if(_Left_But[HELD]){
+                player.flip = 1;
+                while(leftCollision(player.x>>8, player.y>>8)==SOLID && leftCollision((player.x>>8)-1, (player.y>>8)-8)==SOLID){
+                    player.x += 128;
+                }
+                player.x -= player.speed;
+                if(frameSkip==0){player.step ++;}
+            }
+        
+            if (player.step >= 2) {
+                player.frame++;
+                player.step = 0;
+            }
+        
+            if (player.frame >= 4) {
+                player.frame = 0;
+            }
+        
+            if(_Down_But[NEW]){
+                player.dropping = true;
+            }
+        
+            if(_Up_But[NEW]){
+                bool moved=false;
+                for(int t=0; t<numDoors; t++){
+                    if((player.x>>8)+player.centre >= exitDoor[t].x && (player.x>>8)+player.centre <= exitDoor[t].x + sprite_door[0]){
+                        if((player.y>>8)+player.centre >= exitDoor[t].y && (player.y>>8)+player.centre <= exitDoor[t].y + sprite_door[1]){
+                            
+                            // bg.totalGemsCollected == bg.totalGemsToCollect
+                            // hidden room
+                            if(moved==false){
+                                moved = true;
+                                int toDoor = t+1;
+                                if(toDoor == numDoors)toDoor=0;
+                                //printf("Door:%d\n",toDoor); // not printing?
+                                player.x = exitDoor[toDoor].x<<8;
+                                player.y = exitDoor[toDoor].y<<8;
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
+
+    } // player dying
 
     // Add gravity
     player.vy += GRAVITY; // apply gravity to falling speed
@@ -451,16 +492,19 @@ void gameLogic(){
     }
     onGround[checkAmount] = player.onGround;
 
-	if (_A_But[NEW]){
-	    bool checked = false;
-        for(int t=0; t<checkAmount; t++){
-            if(onGround[t] && checked == false){
-                checked = true;
-        	    player.vy = -player.jumpHeight; // Start jumping
-                playSound(0, sfx_jump, 100, random(63)+192);
+    if(playerDying == 0 || playerDying == 2){
+
+    	if (_A_But[NEW]){
+    	    bool checked = false;
+            for(int t=0; t<checkAmount; t++){
+                if(onGround[t] && checked == false){
+                    checked = true;
+            	    player.vy = -player.jumpHeight; // Start jumping
+                    playSound(0, sfx_jump, 100, random(63)+192);
+                }
             }
-        }
-	}
+    	}
+    }
 
     int mapX = player.x-28160;
     //int mapY = player.y-22528;
@@ -616,6 +660,8 @@ int main(){
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,bg.screenBottom-8,tempText);
 
+        sprintf(tempText,"Inv:%d",invincibleCount);
+        myPrint(0,bg.screenBottom-16,tempText);
 
         //sprintf(tempText,"Hit:%d",checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.centre));
         //sprintf(tempText,"Hit:%d",sizeof(enemy1)/sizeof(enemy1[0]));

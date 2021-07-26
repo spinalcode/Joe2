@@ -1,3 +1,42 @@
+void reSatPal(double percent, const uint16_t* palIn, uint16_t*palOut, int size){
+    
+    #define  Pr  .299
+    #define  Pg  .587
+    #define  Pb  .114
+
+    for(int t=0; t<size; t++){ // leave the last 16 colours alone
+
+        uint8_t r,g,b;
+
+        r = (palIn[t] & 0xF800) >> 11;
+        g = (palIn[t] & 0x7E0) >> 5;
+        b = (palIn[t] & 0x1F);
+
+        // convert 656 to 888 for easier maths
+        double R8 = ( r * 527 + 23 ) >> 6;
+        double G8 = ( g * 259 + 33 ) >> 6;
+        double B8 = ( b * 527 + 23 ) >> 6;
+    
+        //  public-domain function by Darel Rex Finley
+        double  P=sqrt(
+          (R8)*(R8)*Pr+
+          (G8)*(G8)*Pg+
+          (B8)*(B8)*Pb ) ;
+            
+        R8=P+((R8)-P)*percent;
+        G8=P+((G8)-P)*percent;
+        B8=P+((B8)-P)*percent;
+    
+        // convert 888 to 565 for reloading
+        uint8_t R5 = (( (int)R8 * 249 + 1014 ) >> 11)&31;
+        uint8_t G6 = (( (int)G8 * 253 +  505 ) >> 10)&63;
+        uint8_t B5 = (( (int)B8 * 249 + 1014 ) >> 11)&31;
+    
+        palOut[t] = (R5<<11)|(G6<<5)|B5;
+    }
+}
+
+
 void reSaturate(double changeRed, double changeGreen, double changeBlue){
     
     #define  Pr  .299
@@ -39,46 +78,12 @@ void reSaturate(double changeRed, double changeGreen, double changeBlue){
     
         gamePalette.rgb[t] = (R5<<11)|(G6<<5)|B5;
 
-        if(t<=palSize){
-            
-            gamePalette.hpal[t] = hline_pal[t];
-
-            // hline pal now
-            r[t] = (gamePalette.hpal[t] & 0xF800) >> 11;
-            g[t] = (gamePalette.hpal[t] & 0x7E0) >> 5;
-            b[t] = (gamePalette.hpal[t] & 0x1F);
-            //float grey = (0.2126 * gamePalette.r[t]) + (0.7152 * gamePalette.g[t] /2) + (0.0722 * gamePalette.b[t]);
-                
-            // convert 656 to 888 for easier maths
-            R8 = ( r[t] * 527 + 23 ) >> 6;
-            G8 = ( g[t] * 259 + 33 ) >> 6;
-            B8 = ( b[t] * 527 + 23 ) >> 6;
-        
-            //  public-domain function by Darel Rex Finley
-            P=sqrt(
-              (R8)*(R8)*Pr+
-              (G8)*(G8)*Pg+
-              (B8)*(B8)*Pb ) ;
-                
-            R8=P+((R8)-P)*changeRed;
-            G8=P+((G8)-P)*changeGreen;
-            B8=P+((B8)-P)*changeBlue;
-        
-            // convert 888 to 565 for reloading
-            R5 = (( (int)R8 * 249 + 1014 ) >> 11)&31;
-            G6 = (( (int)G8 * 253 +  505 ) >> 10)&63;
-            B5 = (( (int)B8 * 249 + 1014 ) >> 11)&31;
-        
-            gamePalette.hpal[t] = (R5<<11)|(G6<<5)|B5;
-        }
-
     }
 
-    // sprite palette
-    for(int t=0; t<16; t++){ // colour palette for sprites
-        gamePalette.rgb[t+240] = color_sprite_pal[t];
-    }
-    
+    reSatPal(changeRed, player_sprite_pal, playerSpritePal, 16); // player sprite palette
+    reSatPal(changeRed, hline_pal, gamePalette.hpal, (sizeof(hline_pal)/2)); // horizon effect palette
+
+
     Pokitto::Display::load565Palette(gamePalette.rgb);
 
 }
