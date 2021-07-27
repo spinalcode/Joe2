@@ -43,7 +43,7 @@ int numLives = 0;
 // Death Animation thingy
 uint8_t playerDying = 0;
 uint8_t playerDeathFrame=0;
-uint8_t playerDeathFrames[] = {9,9,10,10,11,11,12,12,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13};
+uint8_t playerDeathFrames[] = {9,10,11,12,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13};
 uint8_t playerDeathHatFrame[]={6,14,6,6,6};
 uint8_t playerDeathHatX[]={0,1,1,1,1};
 uint8_t playerDeathHatY[]={1,1,2,3,3};
@@ -73,6 +73,7 @@ struct ANIMATION_DATA {
     int startY;
     int endX;
     int endY;
+    uint8_t bitDepth;
     uint8_t frame;
     uint8_t speed;
     uint8_t maxFrame;
@@ -141,6 +142,8 @@ struct PLAYER_DATA {
 
     int startX;
     int startY;
+    int lastGroundX;
+    int lastGroundY;
 
     int8_t hatX = -2;
     int8_t hatY = 6;
