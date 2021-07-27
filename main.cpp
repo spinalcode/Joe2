@@ -28,7 +28,7 @@ void waitButton(){
     while(!_A_But[NEW]) updateButtons();
 }
 
-void drawSprite(int x, int y, const uint8_t *imageData,const uint16_t *paletteData, bool hFlip, uint8_t bit=8){
+void drawSprite(int x, int y, const uint8_t *imageData,const uint16_t *paletteData, bool hFlip, uint8_t bit){
 
     if(++spriteCount>NUMSPRITES-1)spriteCount=NUMSPRITES-1; // don't overflow the sprite max
 
@@ -95,7 +95,7 @@ int rightCollision(int x, int y){
     return checkCollision(x+player.rightBound, y+player.lowerBound);
 }
 
-void startAnimation(int x, int y, int x1, int y1, int speed, int itemType, int startFrame, int maxFrame, const uint8_t *imageData,const uint16_t *paletteData){
+void startAnimation(int x, int y, int x1, int y1, int speed, int itemType, int startFrame, int maxFrame, const uint8_t *imageData,const uint16_t *paletteData, uint8_t bitDepth){
     int useSprite=0;
     for(int t=20; t; t--){
         if(animSprite[t].used==false){useSprite=t;}
@@ -111,12 +111,14 @@ void startAnimation(int x, int y, int x1, int y1, int speed, int itemType, int s
     animSprite[useSprite].endX = x1;
     animSprite[useSprite].endY = y1;
     animSprite[useSprite].frame = 0;
+    animSprite[useSprite].bitDepth = bitDepth;
     animSprite[useSprite].startFrame = startFrame;
     animSprite[useSprite].speed = speed;
     animSprite[useSprite].used = true;
     animSprite[useSprite].frameCount = 1;
-    animSprite[useSprite].frameSize = 2+(imageData[0]/2)*imageData[1];
-    
+    animSprite[useSprite].frameSize = (imageData[0]*imageData[1])/(8/bitDepth);
+    printf("size:%d\n",animSprite[useSprite].frameSize);
+
 }
 
 void renderSprites(){
@@ -201,8 +203,8 @@ void renderSprites(){
             int frame = animSprite[t].frame/animSprite[t].speed;
             int flipme=0;
 
-            drawSprite(animSprite[t].x, animSprite[t].y, animSprite[t].imageData+(frame*(animSprite[t].frameSize)), animSprite[t].paletteData,0,4);
-            //drawSprite(theX, theY, &items[t].imageData[frame*(2+items[t].frameSize)], items[t].paletteData, flipMe ,items[t].bitDepth);
+            //drawSprite(animSprite[t].x, animSprite[t].y, animSprite[t].imageData+(frame*(animSprite[t].frameSize)), animSprite[t].paletteData,0,animSprite[t].bitDepth);
+            drawSprite(animSprite[t].x, animSprite[t].y, &animSprite[t].imageData[frame*(2+animSprite[t].frameSize)], animSprite[t].paletteData,0,animSprite[t].bitDepth);
 
             animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, animSprite[t].endX, animSprite[t].startX-animSprite[t].endX, numAnimFrames))+animSprite[t].endX;
             animSprite[t].y = (animSprite[t].startY-easeInOut(animSprite[t].frameCount, animSprite[t].endY, animSprite[t].startY-animSprite[t].endY, numAnimFrames))+animSprite[t].endY;
@@ -280,7 +282,7 @@ void checkItemCollisions(){
                             int theY = items[t].y-bg.mapY;
                             switch(items[t].type){
                                 case 1:
-                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
+                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6], items[t].bitDepth);
                                     //bg.satRed += bg.redPercent;
                                     bg.countRed++;
                                     items[t].collected = 1;
@@ -288,7 +290,7 @@ void checkItemCollisions(){
                                     updateColours();
                                     break;
                                 case 2:
-                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
+                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6], items[t].bitDepth);
                                     //bg.satGreen += bg.greenPercent;
                                     bg.countGreen++;
                                     items[t].collected = 1;
@@ -296,7 +298,7 @@ void checkItemCollisions(){
                                     updateColours();
                                     break;
                                 case 3:
-                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6]);
+                                    startAnimation(theX, theY, 0,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, gem[0], &gem_pal[(items[t].type-1)*6], items[t].bitDepth);
                                     //bg.satBlue += bg.bluePercent;
                                     bg.countBlue++;
                                     items[t].collected = 1;
@@ -311,11 +313,15 @@ void checkItemCollisions(){
                                         playerDying=1;
                                     }
                                     break;
-
+                                case 9:
+                                    startAnimation(theX, theY, 89+((items[t].type-10)*14) ,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, items[t].imageData, items[t].paletteData, items[t].bitDepth);
+                                    items[t].collected = 1;
+                                    playSound(1, sfx_drop, 300, random(63)+192);
+                                    break;
                                 case 10: // J/O/E
                                 case 11: // J/O/E
                                 case 12: // J/O/E
-                                    startAnimation(theX, theY, 89+((items[t].type-10)*14) ,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, items[t].imageData, items[t].paletteData);
+                                    startAnimation(theX, theY, 89+((items[t].type-10)*14) ,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, items[t].imageData, items[t].paletteData, items[t].bitDepth);
                                     items[t].collected = 1;
                                     //wordCollected[items[t].type-10]=1;
                                     playSound(1, sfx_drop, 300, random(63)+192);
@@ -482,7 +488,10 @@ void gameLogic(){
 
     // check for 'death tiles'
     if (checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.centre) == DEATHCOLOUR){
-        gameMode = 0;
+        //gameMode = 0;
+        player.x = player.lastGroundX;
+        player.y = player.lastGroundY;
+        playerDying=1;
     }
 
 
@@ -491,6 +500,11 @@ void gameLogic(){
         onGround[t] = onGround[t+1];
     }
     onGround[checkAmount] = player.onGround;
+    if(player.onGround){
+        player.lastGroundX = player.x;
+        player.lastGroundY = player.y;
+    }
+
 
     if(playerDying == 0 || playerDying == 2){
 
@@ -660,8 +674,8 @@ int main(){
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,bg.screenBottom-8,tempText);
 
-        sprintf(tempText,"Inv:%d",invincibleCount);
-        myPrint(0,bg.screenBottom-16,tempText);
+//        sprintf(tempText,"Inv:%d",invincibleCount);
+//        myPrint(0,bg.screenBottom-16,tempText);
 
         //sprintf(tempText,"Hit:%d",checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.centre));
         //sprintf(tempText,"Hit:%d",sizeof(enemy1)/sizeof(enemy1[0]));
