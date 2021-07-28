@@ -32,7 +32,7 @@ void clearPalette(int numColours) {
 void spritesToLine(std::uint32_t y){
     if(spriteCount>=0){
         uint8_t offset = 0;
-        for(uint8_t spriteIndex = 0; spriteIndex<spriteCount; spriteIndex++){
+        for(uint8_t spriteIndex = 1; spriteIndex<spriteCount; spriteIndex++){
             auto & sprite = sprites[spriteIndex];
             if(y >= sprite.y && y < sprite.y + sprite.imageData[1]){
                 if(sprite.x>-sprite.imageData[0] && sprite.x<PROJ_LCDWIDTH){

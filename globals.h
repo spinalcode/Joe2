@@ -38,18 +38,18 @@ long int titleTimer = 0;
 uint8_t titleScratch=0;
 long int timerCounter=0;
 uint16_t playerSpritePal[16];
-int numLives = 0;
 
 // Death Animation thingy
 uint8_t playerDying = 0;
 uint8_t playerDeathFrame=0;
 uint8_t playerDeathFrames[] = {9,10,11,12,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13};
 uint8_t playerDeathHatFrame[]={6,14,6,6,6};
-uint8_t playerDeathHatX[]={0,1,1,1,1};
-uint8_t playerDeathHatY[]={1,1,2,3,3};
+uint8_t playerDeathHatX[]={1,0,0,0,0};
+uint8_t playerDeathHatY[]={4,4,4,4,4};
 uint8_t playerDeathHatFlip[]={0,0,1,1,1};
-uint8_t invincibleFrames = 80; // how many frame sto remain invincible
+uint8_t invincibleFrames = 100; // how many frames to remain invincible
 uint8_t invincibleCount;
+#define maxLives 5
 
 // for my own sprite renderer
 #define NUMSPRITES 64
@@ -152,6 +152,7 @@ struct PLAYER_DATA {
     uint8_t direction;
     uint8_t step;
     int speed = 0;
+    uint8_t numLives;
     
     int centre = 7;
     int rightBound = 15;

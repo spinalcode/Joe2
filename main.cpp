@@ -181,7 +181,7 @@ void renderSprites(){
         drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY, player_sprite[playerDeathFrames[playerDeathFrame]], playerSpritePal, player.flip, 4);
         int flipHat = playerDeathHatFlip[playerDeathFrames[playerDeathFrame]-9];
         if(player.flip) flipHat = 1-flipHat;
-        drawSprite((player.x>>8)-bg.mapX-player.hatX + playerDeathHatX[playerDeathFrames[playerDeathFrame]-9] -(player.flip*2), (player.y>>8)-bg.mapY-player.hatY + playerDeathHatX[playerDeathFrames[playerDeathFrame]-9], player_sprite[playerDeathHatFrame[playerDeathFrames[playerDeathFrame]-9]], playerSpritePal, flipHat , 4);
+        drawSprite(((player.x>>8)-bg.mapX) - playerDeathHatX[playerDeathFrames[playerDeathFrame]-9], ((player.y>>8)-bg.mapY) - playerDeathHatY[playerDeathFrames[playerDeathFrame]-9], player_sprite[playerDeathHatFrame[playerDeathFrames[playerDeathFrame]-9]], playerSpritePal, flipHat , 4);
         // stars
         drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY -5, stars[starCount], stars_pal,0,1);
         if(++starCount>=37)starCount=0;
@@ -191,6 +191,7 @@ void renderSprites(){
             invincibleCount=0;
             playerDeathFrame=0;
             playerDying=2;
+            if(player.numLives==0){gameMode=2;}
         }
     }
 
@@ -203,7 +204,6 @@ void renderSprites(){
             int frame = animSprite[t].frame/animSprite[t].speed;
             int flipme=0;
 
-            //drawSprite(animSprite[t].x, animSprite[t].y, animSprite[t].imageData+(frame*(animSprite[t].frameSize)), animSprite[t].paletteData,0,animSprite[t].bitDepth);
             drawSprite(animSprite[t].x, animSprite[t].y, &animSprite[t].imageData[frame*(2+animSprite[t].frameSize)], animSprite[t].paletteData,0,animSprite[t].bitDepth);
 
             animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, animSprite[t].endX, animSprite[t].startX-animSprite[t].endX, numAnimFrames))+animSprite[t].endX;
@@ -244,6 +244,13 @@ void renderSprites(){
                 drawSprite(89+(t*14), bg.screenTop+gemY-16, big_letter[(HUD_wordFrameCount/4)+(t*8)], big_letter_pal,0,4);
             }
         }
+    }
+
+    for(int t=0; t<maxLives; t++){
+        if(t < player.numLives)
+            drawSprite(206-(t*14), bg.screenTop+2, heart[0], heart_pal,0,4);
+        else
+            drawSprite(206-(t*14), bg.screenTop+2, heart[1], heart_pal,0,4);
     }
 
     bg.totalGemsCollected = bg.countRed+bg.countGreen+bg.countBlue;
@@ -309,8 +316,10 @@ void checkItemCollisions(){
                                 case 4:
                                 case 5:
                                 case 6:
-                                    if(invincibleCount==0){
+                                    if(invincibleCount==0 && playerDying==0){
                                         playerDying=1;
+                                        player.numLives--;
+                                        //if(player.numLives==0){gameMode=2;}
                                     }
                                     break;
                                 case 9:
@@ -651,7 +660,7 @@ int main(){
             if( !PC::update() ) continue;
         }else{
             PC::update(0); // don't update screen.
-            spriteCount=-1;        
+            spriteCount=-1; // reset the visible sprites ready for redraw
         }
         frameSkip = 1-frameSkip;
 
@@ -664,24 +673,27 @@ int main(){
                 gameLogic();
                 if(frameSkip==1) renderSprites();
                 break;
+            case 2: // game over screen
+                gameOverScreen();
+                break;
         }   
 
         updateButtons(); // update buttons
-//        fpsCounter++;
 
         char tempText[64];
 
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,bg.screenBottom-8,tempText);
 
-//        sprintf(tempText,"Inv:%d",invincibleCount);
-//        myPrint(0,bg.screenBottom-16,tempText);
+
+        sprintf(tempText,"Lives:%d",player.numLives);
+        myPrint(0,bg.screenBottom-16,tempText);
 
         //sprintf(tempText,"Hit:%d",checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.centre));
         //sprintf(tempText,"Hit:%d",sizeof(enemy1)/sizeof(enemy1[0]));
         //myPrint(0,bg.screenBottom-16,tempText);
 
-        sprintf(tempText,"FPS:%d",PC::getTime()); // for some reason the fps timer doesn't work unless I do this.
+//        sprintf(tempText,"FPS:%d",PC::getTime()); // for some reason the fps timer doesn't work unless I do this.
         if(PC::getTime() >= lastMillis+1000){
             lastMillis = PC::getTime();
             fpsCount = fpsCounter;
