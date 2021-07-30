@@ -24,5 +24,5 @@
 #define PROJ_DEVELOPER_MODE 0
 #define MAX_TILE_COUNT 16
 //#define PROJ_LINE_FILLERS TAS::NOPFiller, TAS::SpriteFiller, TAS::NOPFiller, TAS::NOPFiller, TAS::NOPFiller
-#define PROJ_LINE_FILLERS TAS::NOPFiller, TAS::NOPFiller, TAS::NOPFiller, TAS::NOPFiller
+#define PROJ_LINE_FILLERS TAS::NOPFiller, TAS::NOPFiller, TAS::NOPFiller, TAS::NOPFiller, TAS::NOPFiller
 

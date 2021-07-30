@@ -47,7 +47,7 @@ void titleScreen(){
 
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
         Pokitto::Display::lineFillers[1] = myBGFiller2; // background map layer
-        Pokitto::Display::lineFillers[2] = spriteFill; // sprite layer
+        Pokitto::Display::lineFillers[3] = spriteFill; // sprite layer
 
         Pokitto::Display::setTASRowMask(0b1111'11111111'11111111);
         // a little 'wide-screening' to remove some lines for higher frame rate

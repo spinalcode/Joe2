@@ -24,6 +24,10 @@ int myVolume = 5;
 #define MAX_AMINS 20
 #define GEM_ANIM_SPEED 3
 
+uint8_t cursorFrame=0;
+bool renderMenuLayer = false;
+
+
 uint8_t frameSkip;
 int fpsCount=0;
 long int fpsCounter;
@@ -33,7 +37,7 @@ uint16_t pal[512]; // plasma palette for door
 uint8_t doorPalOffset=0;
 
 uint8_t titleLine[176];
-uint8_t titleRoll[]={0,1,3,4,5,6,7,8,9,10,10,11,11,12,12,12,12,13,13,13,13,14,14,14,14,14,14,14,14,15,15,15,15,15,15,15,15,15,15,15,15,16,16,16,16,16,16,16,16,17,17,17,17,18,18,18,18,19,19,20,21,22,23,24,25,26};
+const uint8_t titleRoll[]={0,1,3,4,5,6,7,8,9,10,10,11,11,12,12,12,12,13,13,13,13,14,14,14,14,14,14,14,14,15,15,15,15,15,15,15,15,15,15,15,15,16,16,16,16,16,16,16,16,17,17,17,17,18,18,18,18,19,19,20,21,22,23,24,25,26};
 long int titleTimer = 0;
 uint8_t titleScratch=0;
 long int timerCounter=0;
@@ -42,14 +46,18 @@ uint16_t playerSpritePal[16];
 // Death Animation thingy
 uint8_t playerDying = 0;
 uint8_t playerDeathFrame=0;
-uint8_t playerDeathFrames[] = {9,10,11,12,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13};
-uint8_t playerDeathHatFrame[]={6,14,6,6,6};
-uint8_t playerDeathHatX[]={1,0,0,0,0};
-uint8_t playerDeathHatY[]={4,4,4,4,4};
-uint8_t playerDeathHatFlip[]={0,0,1,1,1};
-uint8_t invincibleFrames = 100; // how many frames to remain invincible
+const uint8_t playerDeathFrames[] = {9,10,11,12,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13};
+const uint8_t playerDeathHatFrame[]={6,14,6,6,6};
+const uint8_t playerDeathHatX[]={1,0,0,0,0};
+const uint8_t playerDeathHatY[]={4,4,4,4,4};
+const uint8_t playerDeathHatFlip[]={0,0,1,1,1};
+#define invincibleFrames  100 // how many frames to remain invincible
 uint8_t invincibleCount;
-#define maxLives 5
+#define maxLives 10
+
+
+bool gamePaused = false;
+
 
 // for my own sprite renderer
 #define NUMSPRITES 64
@@ -223,12 +231,15 @@ int numGems=0;
 int levelNumber = 0;
 
 
-#define HUD_gemTimerStart 60;
-#define HUD_wordTimerStart 60;
+#define HUD_gemTimerStart 60
+#define HUD_wordTimerStart 60
+#define HUD_heartTimerStart 60
 uint8_t HUD_gemTimer=0;
 uint8_t HUD_wordTimer=0;
+uint8_t HUD_heartTimer=0;
 uint8_t HUD_gemFrameCount=0;
 uint8_t HUD_wordFrameCount=0;
+uint8_t HUD_heartFrameCount=0;
 
 
 const uint8_t plasmaScreen[] ={

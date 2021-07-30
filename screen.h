@@ -2,11 +2,14 @@
 #define bgTileSizeH 8
 #define bgTileSizeW 8
 #define tbt bgTileSizeH*bgTileSizeW
+#define htbt bgTileSizeH*(bgTileSizeW/2)
 
 void inline bgTileLine2();
 void inline bgTileLine();
 
-
+int ease(int t, int b, int c, int d){
+    return ((t*c)/d)+b;
+}
 /*
      ______                 __                 _______                              
     |   __ \.-----.-----.--|  |.-----.----.   |     __|.----.----.-----.-----.-----.
@@ -27,6 +30,97 @@ void clearPalette(int numColours) {
     Pokitto::Display::paletteptr = Pokitto::Display::palette;
 }
 
+
+uint16_t alphaBlendRGB565_old(uint32_t fg, uint32_t bg, uint8_t alpha)
+{ 
+//    return (uint16_t)fg;
+
+  //Fully transparent so return background color
+  if (alpha == 0)
+    return (uint16_t)bg;
+  //Fully opaque so return foreground color
+  if (alpha == 32)
+    return (uint16_t)fg;
+
+  fg = (fg | fg << 16) & 0x07e0f81f;
+  bg = (bg | bg << 16) & 0x07e0f81f;
+  bg += (fg - bg) * alpha >> 5;
+  bg &= 0x07e0f81f;
+  return (uint16_t)(bg | bg >> 16);
+}
+
+
+uint16_t alphaBlendRGB565(uint32_t fg, uint32_t bg, uint8_t alpha) {
+
+    fg = (fg | fg << 16) & 0x07e0f81f;
+    bg = (bg | bg << 16) & 0x07e0f81f;
+    bg += (fg - bg) * alpha >> 5;
+    bg &= 0x07e0f81f;
+        return (uint16_t)(bg | bg >> 16);
+
+/*
+    uint8_t r,g,b,r1,g1,b1,r2,g2,b2;
+
+    r1 = (fg & 0xF800) >> 11;
+    g1 = (fg & 0x7E0) >> 5;
+    b1 = (fg & 0x1F);
+    r2 = (bg & 0xF800) >> 11;
+    g2 = (bg & 0x7E0) >> 5;
+    b2 = (bg & 0x1F);
+
+    r = (((alpha*(r1-r2))/32)+r2)&31;
+    g = (((alpha*(g1-g2))/32)+g2)&63;
+    b = (((alpha*(b1-b2))/32)+b2)&31;
+    
+    return (r<<11)|(g<<5)|b;
+*/
+}
+
+
+void GUILine(std::uint8_t* line, std::uint32_t y, bool skip){
+
+    if(skip)return;
+    if(y<bg.screenTop+1 || y>=bg.screenBottom){
+        return;
+    }
+
+    uint32_t x = 0;
+
+    uint32_t tileIndex = 2+(y/8) * 27;
+
+    uint32_t tileStart;
+    uint32_t lineOffset;
+    uint32_t lineStart = 0;
+    uint32_t thisTile;
+    uint32_t tileOffset=0;
+    uint32_t alpha;
+    uint32_t temp;
+    auto &tileRef = guiFont[0];
+    #define invisible 1
+
+    for(int d=0; d<27; d++){
+        lineOffset = 2 + ((y%8)*4) + guiBG[tileIndex++]*34;
+        for(int c=0; c<4; c++){
+            temp = tileRef[lineOffset]>>4;
+            if(temp==0){
+                scanLine[PRESCAN + x] = 0;
+            }else{
+                if(temp==invisible){alpha = 16;}else{alpha=32;}
+                scanLine[PRESCAN + x] = alphaBlendRGB565(guiFont_pal[temp], gamePalette.rgb[line[x]], alpha);
+            }
+            x++;
+            temp = tileRef[lineOffset++]&15;
+            if(temp==0){
+                scanLine[PRESCAN + x] = 0;
+            }else{
+                if(temp==invisible){alpha = 16;}else{alpha=32;}
+                scanLine[PRESCAN + x] = alphaBlendRGB565(guiFont_pal[temp], gamePalette.rgb[line[x]], alpha);
+            }
+            x++;
+        }
+    }
+
+}
 
 
 void spritesToLine(std::uint32_t y){
@@ -62,7 +156,6 @@ void spritesToLine(std::uint32_t y){
                             }
                             break;
                         } // case 16
-
                         case 8:{
                             sprite.offset = 2+(sprite.imageData[0] * (y-sprite.y));
                             int pixelPos = sprite.x;
@@ -285,6 +378,12 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
         return;
     }
 
+
+    if(renderMenuLayer==true){
+        GUILine(line, y, skip);
+        //renderMenuLayer=false;
+    }
+    
     spritesToLine(y);
 
     auto Palette = &Pokitto::Display::palette[0];
@@ -311,19 +410,6 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
             *ScanLine++ = 0;\
             *Line++ = x++;
 
-/*
-        #define SixteenBitLine1()\
-            if(ScanLine[x]!=0){\
-                Palette[x] = ScanLine[x];\
-                ScanLine[x] = 0;\
-            }else{\
-                if(Line[x]==0)\
-                    Palette[x] = offsetedPal[spriteSource[plasmaScreen[x]]];\
-                else\
-                    Palette[x] = rgbPalette[Line[x]];\
-            }\
-            Line[x++] = x;
-*/
         for(uint32_t x=0; x<220;){
             SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1();
             SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1();
@@ -339,31 +425,11 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
             *ScanLine++ = 0;\
             *Line++ = x++;
 
-/*
-            x--;\
-            if(ScanLine[x]!=0){\
-                Palette[x] = ScanLine[x];\
-                ScanLine[x] = 0;\
-            }else{\
-                Palette[x] = rgbPalette[Line[x]];\
-            }\
-            Line[x] = x;
-*/
-
         for(uint32_t x=0; x<220;){
             SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); 
             SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); 
             SixteenBitLine2(); SixteenBitLine2(); SixteenBitLine2(); 
-/*
-            x--;
-            if(ScanLine[x]!=0){
-                Palette[x] = ScanLine[x];
-                ScanLine[x] = 0;
-            }else{
-                Palette[x] = rgbPalette[Line[x]];
-            }
-            Line[x] = x;
-*/
+
         }
     }
 
@@ -640,4 +706,5 @@ void myBGFiller3(std::uint8_t* line, std::uint32_t y, bool skip){
     bgColLine(); bgColLine(); bgColLine(); bgColLine();
     bgColLine(); bgColLine(); bgColLine(); bgColLine();
 }
+
 

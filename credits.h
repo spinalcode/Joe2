@@ -15,6 +15,9 @@ Original unrolled 28fps
 New in loop 29fps
 New unrolled 29fps
 
+Magicians Name = Hue-dini.
+
+Joe 2 - A pigment of your imagination.
 
 
 

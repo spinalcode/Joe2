@@ -14,6 +14,7 @@
 #include "buttonhandling.h"
 
 #include "background.h"
+#include "pause.h"
 #include "screen.h"
 #include "levelsandmaps.h"
 #include "easing.h"
@@ -22,6 +23,8 @@
 void write_command_16(uint16_t data);
 void write_data_16(uint16_t data);
 
+// set hardware volume quite low
+SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
 
 void waitButton(){
     updateButtons();
@@ -59,6 +62,137 @@ void make_pal(void){
 		s = 192; r = 0;		g = a;		b = 0;	 	pal[a+s] = Pokitto::Core::display.RGBto565(r*4,g*4,b*4); pal[255+a+s] = pal[a+s];
 	}
 }
+
+int isdigit(int c){
+	return (c >= '0' && c <= '9');
+}
+
+// extracts the last positive integral value of string s
+// returns...
+// on success, the int value scanned
+// -1, if the string is null, empty, or not terminated by a number
+int extractLastIntegral(const char* s) {
+    int value = -1;
+    if (s && *s) {  // don't parse null and empty strings
+        const char *scanstr = s + strlen(s) - 1;
+        while (scanstr > s && isdigit(*(scanstr-1))) {
+            scanstr--;
+        }
+        sscanf(scanstr,"%d", &value);
+    }
+    return value;
+}
+
+
+/*
+void saveSettings(){
+    mkdir("/joe2/", 0777); // make sure folder exist
+    File f;
+    
+    if(f.openRW("/joe2/settings.ini",1,0)){
+        char tempText[20];
+        sprintf(tempText,"volume = %d\n",myVolume);
+        f.write(tempText);
+        f.close();
+    }
+}
+
+void loadSettings(){
+
+    char txtLine[64];
+    int tempChar;
+    int index = 0;
+    mkdir("/joe2/", 0777); // make sure folder exist
+    
+    File f;
+    
+    if(f.openRO("/joe2/settings.ini")){
+
+        int numStations = 0;
+        
+        while(f.read(&tempChar, 1)){
+    
+            if (tempChar == EOF) {
+                txtLine[index] = '\0';
+                break;
+            }
+    
+            if (tempChar == '\n') {
+                txtLine[index] = '\0';
+                index=0;
+                if(strncmp(txtLine, "volume", strlen("volume"))==0){
+                    myVolume = extractLastIntegral(txtLine);
+                }
+
+                continue;
+            }
+            else
+                txtLine[index++] = (char)tempChar;
+        }
+        
+    }else{
+        myVolume = 10;
+        //saveSettings();
+    }
+}
+*/
+
+void c_menu(){
+    guiPrint(9,6, "    PAWS");
+    
+    int numOptions = sizeof(menuText)/sizeof(menuText[0]);
+    
+    for(int t=0; t<numOptions; t++){
+        guiPrint(11,9+(t*2), menuText[t]);
+    }
+    char tempText[10];
+    sprintf(tempText,"%d ",myVolume);
+    guiPrint(18,11, tempText);
+
+
+    drawSprite(55, 47, paw, paw_pal,0,2);
+    drawSprite(59, 47, paw, paw_pal,1,2);
+    drawSprite(133, 47, paw, paw_pal,0,2);
+    drawSprite(137, 47, paw, paw_pal,1,2);
+
+    
+    drawSprite(58, 71+(optionNumber*16), tinyJoe[cursorFrame/2], tinyJoe_pal,0,2);
+    if(++cursorFrame>=12)cursorFrame=0;
+
+    updateButtons();
+    if(_Up_But[NEW] && optionNumber>0) optionNumber--;
+    if(_Down_But[NEW] && optionNumber<numOptions-1) optionNumber++;
+    if(_C_But[NEW]){
+        gamePaused = false;
+        renderMenuLayer = false;
+    }
+
+    if(_A_But[RELEASED]){
+        if(optionNumber==0){
+            // Return to game
+            gamePaused = false;
+            renderMenuLayer = false;
+        }
+        if(optionNumber==2){
+            // Exit the game
+            gamePaused = false;
+            renderMenuLayer = false;
+            gameMode = 0;
+        }
+    }
+
+    if(optionNumber==1){
+        if(_Left_But[NEW]){
+            if(myVolume > 0) myVolume--;
+            swvolpot.write(0x5e, myVolume);
+        }
+        if(_Right_But[NEW]){
+            if(myVolume < 64) myVolume++;
+            swvolpot.write(0x5e, myVolume);
+        }
+    }
+};
+
 
 /*
 void setFPS(int fps){
@@ -232,6 +366,8 @@ void renderSprites(){
         char tempText[10];
         snprintf(tempText,sizeof(tempText),"%d/%d",bg.countRed+bg.countGreen+bg.countBlue, bg.numRed+bg.numGreen+bg.numBlue);
         myPrint(20,bg.screenTop+gemY-12,tempText);
+    }else{
+        HUD_gemFrameCount=0;
     }
     if(HUD_wordTimer){
         HUD_wordTimer--;
@@ -244,14 +380,32 @@ void renderSprites(){
                 drawSprite(89+(t*14), bg.screenTop+gemY-16, big_letter[(HUD_wordFrameCount/4)+(t*8)], big_letter_pal,0,4);
             }
         }
+    }else{
+        HUD_wordFrameCount=0;
     }
 
-    for(int t=0; t<maxLives; t++){
-        if(t < player.numLives)
-            drawSprite(206-(t*14), bg.screenTop+2, heart[0], heart_pal,0,4);
-        else
-            drawSprite(206-(t*14), bg.screenTop+2, heart[1], heart_pal,0,4);
+    if(HUD_heartTimer){
+        HUD_heartTimer--;
+        int hudY = HUD_heartTimer;
+        if(hudY > 16)hudY=16;
+        HUD_heartFrameCount++;
+        if(HUD_heartFrameCount == HUD_heartTimerStart/2){
+            player.numLives--;
+            playSound(1, sfx_pop, 100);
+        }
+
+        if(HUD_heartFrameCount>=32)HUD_heartFrameCount=0;
+        for(int t=0; t<maxLives; t++){
+            if(t < player.numLives)
+                drawSprite(206-(t*14), bg.screenTop+2+hudY-16, heart[0], heart_pal,0,4);
+            else
+                drawSprite(206-(t*14), bg.screenTop+2+hudY-16, heart[1], heart_pal,0,4);
+        }
+    }else{
+        HUD_heartFrameCount=0;
     }
+
+
 
     bg.totalGemsCollected = bg.countRed+bg.countGreen+bg.countBlue;
 }
@@ -318,7 +472,9 @@ void checkItemCollisions(){
                                 case 6:
                                     if(invincibleCount==0 && playerDying==0){
                                         playerDying=1;
-                                        player.numLives--;
+                                        //player.numLives--;
+                                        HUD_heartTimer = HUD_heartTimerStart;
+
                                         //if(player.numLives==0){gameMode=2;}
                                     }
                                     break;
@@ -373,12 +529,22 @@ void gameLogic(){
 
             //if(_Left_But[NEW]){ player.flip = 1;}
             //if(_Right_But[NEW]){ player.flip = 0;}
+
+            if( !_Up_But[HELD] &&
+                !_Down_But[HELD] &&
+                !_Left_But[HELD] &&
+                !_Right_But[HELD]){
+                    // reset the player to standing if no buttons pressed.
+                    player.frame = 0;
+                    player.step = 0;
+            }
         
+        /*
             if( _Left_But[RELEASED] || _Right_But[RELEASED]){
                 player.frame = 0;
                 player.step = 0;
             }
-        
+        */
             if(_B_But[HELD]){player.speed =PLAYER_SPEED*1.5;}else{player.speed = PLAYER_SPEED;}
         
             if(_Right_But[HELD]){
@@ -510,8 +676,11 @@ void gameLogic(){
     }
     onGround[checkAmount] = player.onGround;
     if(player.onGround){
-        player.lastGroundX = player.x;
-        player.lastGroundY = player.y;
+        int colLeft = checkCollision((player.x>>8)+player.centre, ((player.y+128)>>8)+player.lowerBound);
+        if (colLeft == SOLID) {
+            player.lastGroundX = player.x;
+            player.lastGroundY = player.y;
+        }
     }
 
 
@@ -597,14 +766,6 @@ void gameLogic(){
 
 
 
-
-
-void C_Menu(){
-    // Not implemented yet
-}
-
-
-
 int main(){
     using PC=Pokitto::Core;
     using PD=Pokitto::Display;
@@ -626,6 +787,7 @@ int main(){
 
     make_pal();
 
+
     updateButtons(); // update buttons
     while(_A_But[HELD]){
         updateButtons(); // update buttons
@@ -642,15 +804,16 @@ int main(){
     clearAudioBuffer(2);
     startSong("/joe2/flute.pcm");
 
-    // set hardware volume quite low
-    SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
     //if(myVolume>64){myVolume=64;}
     //if(myVolume<0){myVolume=0;}
     swvolpot.write(0x5e, myVolume);
 
     long int lastMillis = PC::getTime();
-
     long int titleTimer = PC::getTime();
+
+    //saveSettings(); // test
+    myVolume = 10;
+    swvolpot.write(0x5e, myVolume);
 
     while( PC::isRunning() ){
         
@@ -660,25 +823,41 @@ int main(){
             if( !PC::update() ) continue;
         }else{
             PC::update(0); // don't update screen.
-            spriteCount=-1; // reset the visible sprites ready for redraw
+            spriteCount=0; // reset the visible sprites ready for redraw
+            if(gamePaused) c_menu();
         }
         frameSkip = 1-frameSkip;
 
-        switch(gameMode){
-            
-            case 0: // titlescreen
-                titleScreen();
-                break;
-            case 1: // gameplay
-                gameLogic();
-                if(frameSkip==1) renderSprites();
-                break;
-            case 2: // game over screen
-                gameOverScreen();
-                break;
-        }   
+
+        if(gamePaused==false){
+            switch(gameMode){
+                
+                case 0: // titlescreen
+                    titleScreen();
+                    break;
+                case 1: // gameplay
+                    gameLogic();
+                    if(frameSkip==1){
+                        renderSprites();
+                    }
+                    break;
+                case 2: // game over screen
+                    gameOverScreen();
+                    break;
+            }   
+        }
 
         updateButtons(); // update buttons
+        if(_C_But[NEW]){
+            gamePaused = !gamePaused;
+            
+            for(int t=0; t<sizeof(menuBG); t++){
+                guiBG[t] = menuBG[t];
+            }
+            
+            if(gamePaused){renderMenuLayer = true;}else{renderMenuLayer=false;}
+        }
+
 
         char tempText[64];
 
