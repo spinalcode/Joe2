@@ -220,7 +220,7 @@ inline void updateStream(){
         }
 
         //if(playingMusic2){
-            if(!sfxFile.read(&audioBuffer2[0], 0)){}
+//            if(!sfxFile.read(&audioBuffer2[0], 0)){}
         //}
 
     }

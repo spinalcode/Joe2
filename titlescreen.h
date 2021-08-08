@@ -1,5 +1,6 @@
 
-void titleScreen(){
+
+void renderTitleScreen(){
 
     if(mustDrawTitleScreen==true) {
         mustDrawTitleScreen = false;
@@ -34,6 +35,12 @@ void titleScreen(){
             Pokitto::Display::update(); // needed?
         }
     }
+    
+}
+
+void titleScreen(){
+
+    renderTitleScreen();
 
     if(_A_But[NEW]){
         
@@ -56,7 +63,7 @@ void titleScreen(){
         
         mustDrawTitleScreen=true;
         titleTimer=0;
-//        startSong("/joe2/C_6000.pcm");
+        startSong("/joe2/C_6000.pcm");
         player.numLives = maxLives;
         playerDying = 0;
     }

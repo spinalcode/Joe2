@@ -782,7 +782,7 @@ int main(){
 
     while( PC::isRunning() ){
         
-        //updateStream();
+        updateStream();
 
         if(frameSkip==0){
             fpsCounter++;

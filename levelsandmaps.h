@@ -48,10 +48,14 @@ void reSaturate(double changeRed, double changeGreen, double changeBlue){
 void updateMap(int mx, int my, int levNum, int map){
 
     if(map == LEVMAIN){
+        
+        auto minMap = &bg.miniMap[0];
         uint32_t t=0;
         // The map in RAM is 2x2 physical screens
         bg.miniMap[t++] = 28*2;
+//        *minMap++ = 28*2;
         bg.miniMap[t++] = 22*2;
+//        *minMap++ = 22*2;
 
         char levelFilename[32]; // doesn't need to be this long...
         sprintf(levelFilename,"joe2/%02d.bin",levNum);
@@ -63,26 +67,10 @@ void updateMap(int mx, int my, int levNum, int map){
             for(int y=0; y<bg.miniMap[1]; y++){
                 file.seek(4+(mx*2)+(mWidth*2)*(my+y));
                 file.read(&bg.miniMap[t], bg.miniMap[0]*2);
+                //file.read(minMap++, bg.miniMap[0]*2);
+                //*minMap++;
                 t+=bg.miniMap[0];
             }
-
-/*
-        int t=0;
-        printf("%d,\n",bg.miniMap[t++]);
-        printf("%d,\n",bg.miniMap[t++]);
-            for(int y=0; y<bg.miniMap[1]; y++){
-                for(int x=0; x<bg.miniMap[0]; x++){
-                    printf("%d,",bg.miniMap[t++]);
-                }
-                printf("\n");
-            }
-*/
-
-            // to test where the corruption is
-            //for(int x=2; x<bg.miniMap[0]*3; x++){
-            //    bg.miniMap[x] = 0;
-            //}
-            //file.close();
         }
     }
 /*
