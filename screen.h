@@ -1,11 +1,15 @@
 // tile map
-#define bgTileSizeH 8
-#define bgTileSizeW 8
-#define tbt bgTileSizeH*bgTileSizeW
-#define htbt bgTileSizeH*(bgTileSizeW/2)
+#define BG_TILE_SIZE_H 8
+#define BG_TILE_SIZE_W 8
+#define tbt BG_TILE_SIZE_H*BG_TILE_SIZE_W
+#define htbt BG_TILE_SIZE_H*(BG_TILE_SIZE_W/2)
 
 void inline bgTileLine2();
 void inline bgTileLine();
+
+void write_command_16(uint16_t data);
+void write_data_16(uint16_t data);
+
 
 int ease(int t, int b, int c, int d){
     return ((t*c)/d)+b;
@@ -31,25 +35,6 @@ void clearPalette(int numColours) {
 }
 
 
-uint16_t alphaBlendRGB565_old(uint32_t fg, uint32_t bg, uint8_t alpha)
-{ 
-//    return (uint16_t)fg;
-
-  //Fully transparent so return background color
-  if (alpha == 0)
-    return (uint16_t)bg;
-  //Fully opaque so return foreground color
-  if (alpha == 32)
-    return (uint16_t)fg;
-
-  fg = (fg | fg << 16) & 0x07e0f81f;
-  bg = (bg | bg << 16) & 0x07e0f81f;
-  bg += (fg - bg) * alpha >> 5;
-  bg &= 0x07e0f81f;
-  return (uint16_t)(bg | bg >> 16);
-}
-
-
 uint16_t alphaBlendRGB565(uint32_t fg, uint32_t bg, uint8_t alpha) {
 
     fg = (fg | fg << 16) & 0x07e0f81f;
@@ -57,23 +42,6 @@ uint16_t alphaBlendRGB565(uint32_t fg, uint32_t bg, uint8_t alpha) {
     bg += (fg - bg) * alpha >> 5;
     bg &= 0x07e0f81f;
         return (uint16_t)(bg | bg >> 16);
-
-/*
-    uint8_t r,g,b,r1,g1,b1,r2,g2,b2;
-
-    r1 = (fg & 0xF800) >> 11;
-    g1 = (fg & 0x7E0) >> 5;
-    b1 = (fg & 0x1F);
-    r2 = (bg & 0xF800) >> 11;
-    g2 = (bg & 0x7E0) >> 5;
-    b2 = (bg & 0x1F);
-
-    r = (((alpha*(r1-r2))/32)+r2)&31;
-    g = (((alpha*(g1-g2))/32)+g2)&63;
-    b = (((alpha*(b1-b2))/32)+b2)&31;
-    
-    return (r<<11)|(g<<5)|b;
-*/
 }
 
 
@@ -87,12 +55,7 @@ void GUILine(std::uint8_t* line, std::uint32_t y, bool skip){
     uint32_t x = 0;
 
     uint32_t tileIndex = 2+(y/8) * 27;
-
-    uint32_t tileStart;
     uint32_t lineOffset;
-    uint32_t lineStart = 0;
-    uint32_t thisTile;
-    uint32_t tileOffset=0;
     uint32_t alpha;
     uint32_t temp;
     auto &tileRef = guiFont[0];
@@ -130,12 +93,10 @@ void spritesToLine(std::uint32_t y){
             auto & sprite = sprites[spriteIndex];
             if(y >= sprite.y && y < sprite.y + sprite.imageData[1]){
                 if(sprite.x>-sprite.imageData[0] && sprite.x<PROJ_LCDWIDTH){
-                    int startPos = sprite.x;
                     switch(sprite.bit){
                         case 16:{
                             // untested, I don't have any 16bit sprites
                             sprite.offset = 2+(sprite.imageData[0] * (y-sprite.y));
-                            int pixelPos = sprite.x;
                             if(sprite.hFlip){
                                 for(offset=0; offset < sprite.imageData[0]; offset++){
                                     int pixPos = (sprite.imageData[0] + sprite.x - offset);
@@ -158,7 +119,6 @@ void spritesToLine(std::uint32_t y){
                         } // case 16
                         case 8:{
                             sprite.offset = 2+(sprite.imageData[0] * (y-sprite.y));
-                            int pixelPos = sprite.x;
                             if(sprite.hFlip){
                                 for(offset=0; offset < sprite.imageData[0]; offset++){
                                     int pixPos = sprite.imageData[0] + sprite.x - offset;
@@ -181,7 +141,6 @@ void spritesToLine(std::uint32_t y){
                         } // case 8
                         case 4:{
                             sprite.offset = 2+((sprite.imageData[0]/2) * (y-sprite.y));
-                            int pixelPos = sprite.x;
                             if(sprite.hFlip){
                                 for(offset=0; offset < sprite.imageData[0];){
                                     int pixPos = sprite.imageData[0] + sprite.x - offset;
@@ -215,7 +174,6 @@ void spritesToLine(std::uint32_t y){
                         } // case 4
                         case 2:{
                             sprite.offset = 2+((sprite.imageData[0]/4) * (y-sprite.y));
-                            int pixelPos = sprite.x;
                             if(sprite.hFlip){
                                 for(offset=0; offset < sprite.imageData[0];){
                                     int pixPos = sprite.imageData[0] + sprite.x - offset;
@@ -269,7 +227,6 @@ void spritesToLine(std::uint32_t y){
                         } // case 2
                         case 1:{
                             sprite.offset = 2+((sprite.imageData[0]/8) * (y-sprite.y));
-                            int pixelPos = sprite.x;
                             if(sprite.hFlip){
                                 for(offset=0; offset < sprite.imageData[0];){
                                     int pixPos = sprite.imageData[0] + sprite.x - offset;
@@ -381,14 +338,13 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
 
     if(renderMenuLayer==true){
         GUILine(line, y, skip);
-        //renderMenuLayer=false;
     }
     
     spritesToLine(y);
 
     auto Palette = &Pokitto::Display::palette[0];
     auto Line = &line[0];
-    auto ScanLine = &scanLine[PRESCAN + 0];
+    auto ScanLine = &scanLine[PRESCAN];
     uint16_t* rgbPalette = &gamePalette.rgb[0];
 
     if(bg.totalGemsCollected == bg.totalGemsToCollect){
@@ -468,26 +424,20 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
 
     gamePalette.rgb[0] = gamePalette.hpal[hline[y]];
 
-    uint32_t stX = (-bg.windowX)%bgTileSizeW;
+    uint32_t stX = -(bg.windowX&7);
     uint32_t x = stX;
-    uint32_t tileIndex = bg.windowX/bgTileSizeW + ((y+bg.windowY)/bgTileSizeH) * bg.miniMap[0];
-    uint32_t jStart = ((y+bg.windowY) %bgTileSizeH) * bgTileSizeW; // current line in current tile
+    uint32_t tileIndex = (bg.windowX>>3) + ((y+bg.windowY)>>3) * bg.miniMap[0];
+    uint32_t jStart = ((y+bg.windowY)&7) <<3; // current line in current tile
 
-    uint32_t tileStart;
     uint32_t lineOffset;
     uint32_t lineStart = -stX;
-//    uint32_t isFlipped = 0;         /* isFlipped = thisTile>>15 */
     uint32_t thisTile;
-    uint32_t tileOffset=0;
-    uint32_t b=bgTileSizeW;
     auto lineP = &line[0];
+    if(x<0){lineOffset+=lineStart; x=0;}
 
     #define bgTileLine()\
-        if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = bg.miniMap[2+tileIndex++]&0x83FF;\
-        tileStart = (thisTile&1023)*tbt;\
-        lineOffset = tileStart + jStart;\
-        b=bgTileSizeW;\
+        lineOffset = ((thisTile&1023)*tbt) + jStart;\
         lineP = &line[x];\
         x+=8;\
         if(thisTile&32768){\
@@ -513,11 +463,8 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
         }
 
     #define bgHalfTileLine()\
-        if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = bg.miniMap[2+tileIndex++]&0x83FF;\
-        tileStart = (thisTile&1023)*tbt;\
-        lineOffset = tileStart + jStart;\
-        b=bgTileSizeW;\
+        lineOffset = ((thisTile&1023)*tbt) + jStart;\
         lineP = &line[x];\
         if(thisTile&32768){\
             auto tilesP = &tiles[7 + lineOffset];\
@@ -543,112 +490,93 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
     bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
     bgTileLine(); bgTileLine(); bgTileLine(); bgTileLine();
     bgHalfTileLine(); 
-//    for(uint32_t b=216; b<220; b++){ line[b]=colourBlack; }
-
-    //if(clearScreen==true) memset(&line[0], 10, 220);
 
 }
 
-
+// background scenery
 void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
 
     if(y<bg.screenTop || y>bg.screenBottom){
-        //memset(&line[0],0,220);
         return;
     }
-//    if(skip)return;
 
-    int mX = bg.mapX/4;
-    int mY = (bg.mapY-64)/4;
-
-//    if(mY+(int)y <=0) return;
-//    if(mY+(int)y >=176) return;
-
-    uint32_t stX = (-mX)%bgTileSizeW;
+    uint32_t stX = -(bg.midwindowX&7);
     uint32_t x = stX;
-    uint32_t tileIndex = mX/bgTileSizeW + ((y+mY)/bgTileSizeH) * midmap[0];
-    uint32_t jStart = ((y+mY) %bgTileSizeH) * bgTileSizeW; // current line in current tile
+    uint32_t tileIndex = (bg.midwindowX>>3) + ((y+bg.midwindowY)>>3) * bg.midminiMap[0];
+    uint32_t jStart = ((y+bg.midwindowY)&7) <<3; // current line in current tile
 
-    uint32_t tileStart;
     uint32_t lineOffset;
     uint32_t lineStart = -stX;
-    uint32_t isFlipped = 0;
     uint32_t thisTile;
-    uint32_t tileOffset=0;
-    uint32_t b=bgTileSizeW;
     auto lineP = &line[0];
+    if(x<0){lineOffset+=lineStart; x=0;}
 
     #define bgTileLine2()\
-        if(x<0){lineOffset+=lineStart; x=0;}\
-        thisTile = midmap[2+tileIndex++];\
-        tileStart = (thisTile&1023)*tbt;\
-        lineOffset = tileStart + jStart;\
+        thisTile = bg.midminiMap[2+tileIndex++]&0x83FF;\
+        lineOffset = ((thisTile&1023)*tbt) + jStart;\
         lineP = &line[x];\
         if(thisTile&32768){\
             auto tilesP = &tiles[7 + lineOffset];\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
         }else{\
             auto tilesP = &tiles[lineOffset];\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
         }
 
-
     #define bgHalfTileLine2()\
-        if(x<0){lineOffset+=lineStart; x=0;}\
-        thisTile = midmap[2+tileIndex++];\
-        tileStart = (thisTile&1023)*tbt;\
-        lineOffset = tileStart + jStart;\
+        thisTile = bg.midminiMap[2+tileIndex++]&0x83FF;\
+        lineOffset = ((thisTile&1023)*tbt) + jStart;\
         lineP = &line[x];\
         if(thisTile&32768){\
             auto tilesP = &tiles[7 + lineOffset];\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP--;\
         }else{\
             auto tilesP = &tiles[lineOffset];\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
-            if(*lineP==0) *lineP = *tilesP;\
-            x++; *lineP++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
+            if(line[x]==0) line[x] = *tilesP;\
+            x++; *tilesP++;\
         }
 
     // unrolling this loop got an extra 10fps
@@ -663,39 +591,37 @@ void myBGFiller2(std::uint8_t* line, std::uint32_t y, bool skip){
 
 }
 
-
+/*
 // render the collision map
 void myBGFiller3(std::uint8_t* line, std::uint32_t y, bool skip){
 
     if(skip)return;
 
-    uint32_t stX = (-bg.windowX)%bgTileSizeW;
+    uint32_t stX = (-bg.windowX)%BG_TILE_SIZE_W;
     uint32_t x = stX;
 
-    uint32_t tileIndex = bg.windowX/bgTileSizeW + ((y+bg.windowY)/bgTileSizeH) * bg.miniMap[0];
-    uint32_t jStart = ((y+bg.windowY) %bgTileSizeH) * bgTileSizeW; // current line in current tile
+    uint32_t tileIndex = bg.windowX/BG_TILE_SIZE_W + ((y+bg.windowY)/BG_TILE_SIZE_H) * bg.miniMap[0];
+    uint32_t jStart = ((y+bg.windowY) %BG_TILE_SIZE_H) * BG_TILE_SIZE_W; // current line in current tile
 
     uint32_t tileStart;
     uint32_t lineOffset;
     uint32_t lineStart = -stX;
-    uint32_t isFlipped = 0;
+//    uint32_t isFlipped = 0;
     uint32_t thisTile;
-    uint32_t tileOffset=0;
-    int xLine = 220-(bg.mapX%220);
+//    uint32_t tileOffset=0;
+//    int xLine = 220-(bg.mapX%220);
 
     #define bgColLine()\
         if(x<0){lineOffset+=lineStart; x=0;}\
         thisTile = (bg.miniMap[2+tileIndex++]>>10)&31;\
         tileStart = (thisTile&32767)*tbt;\
         lineOffset = tileStart + jStart;\
-        for(uint32_t b=0; b<bgTileSizeW; b++){\
+        for(uint32_t b=0; b<BG_TILE_SIZE_W; b++){\
             if(collisionTile[lineOffset] > 0){\
                 if((bg.windowX + x)%224==0)line[x]=240;\
             }\
             lineOffset++; x++;\
         }
-
-//                line[x] = collisionTile[lineOffset];\
 
     // unrolling this loop got an extra 10fps
     bgColLine(); bgColLine(); bgColLine(); bgColLine();
@@ -706,5 +632,126 @@ void myBGFiller3(std::uint8_t* line, std::uint32_t y, bool skip){
     bgColLine(); bgColLine(); bgColLine(); bgColLine();
     bgColLine(); bgColLine(); bgColLine(); bgColLine();
 }
+*/
 
+void lcdRefreshTASMode(const uint16_t* palette){
+    int screenWidth = 220;
+    int screenHeight = 176;
+
+    // reset the screen to 0,0 each frame...
+    #ifndef POK_SIM
+        write_command_16(0x20);  // Horizontal DRAM Address
+        write_data_16(0);
+        write_command_16(0x22); // write data to DRAM
+        CLR_CS_SET_CD_RD_WR;
+        SET_MASK_P2;
+    #else
+        Pokitto::setDRAMptr(0,0); //needs to be called explicitly for pokitto_sim (no real controller!)
+    #endif
+    
+    uint8_t lineBuffer[screenWidth + 16];
+    uint8_t *line = lineBuffer + 8;
+    auto mask = Pokitto::Display::TASMask;
+    bool disabled = mask & 1;
+    uint32_t maskY = 8;
+
+    constexpr int lineFillerCount = sizeof(Pokitto::Display::lineFillers) / sizeof(Pokitto::Display::lineFillers[0]);
+    int fillerCount = 0;
+    TAS::LineFiller fillers[lineFillerCount];
+    for(int i=0; i<lineFillerCount; i++){
+        auto filler = Pokitto::Display::lineFillers[i];
+        if(!filler || filler == TAS::NOPFiller)
+            continue;
+        fillers[fillerCount++] = filler;
+    }
+
+    for(uint32_t y=0; y<screenHeight; ++y ){
+        #ifdef POK_SIM
+            Pokitto::setDRAMptr(0,y); //needs to be called explicitly for pokitto_sim (no real controller!)
+        #endif // POK_SIM
+
+        if(interlaceScreen){
+            if(frameJump){
+                disabled = (y&1);
+            }else{
+                disabled = !(y&1);
+            }
+        }
+
+
+        for( int i=0; i<fillerCount; ++i ){
+            fillers[i]( line, y, disabled );
+        }
+
+        if(disabled){
+            #ifndef POK_SIM
+                write_command_16(0x20);  // Horizontal DRAM Address
+                write_data_16(y+1);
+                write_command_16(0x21);  // Vertical DRAM Address
+                write_data_16(0);  // 0
+                write_command_16(0x22); // write data to DRAM
+                CLR_CS_SET_CD_RD_WR;
+                SET_MASK_P2;
+            #else
+                Pokitto::setDRAMptr(0,y+1); //needs to be called explicitly for pokitto_sim (no real controller!)
+            #endif
+            continue;
+        }
+
+        flushLine(palette, line);
+    }
+}
+
+void myRefreshTASMode(const uint16_t* palette){
+    int screenWidth = 220;
+    int screenHeight = 176;
+
+    // reset the screen to 0,0 each frame...
+    #ifndef POK_SIM
+        write_command_16(0x20);  // Horizontal DRAM Address
+        write_data_16(0);
+        write_command_16(0x22); // write data to DRAM
+        CLR_CS_SET_CD_RD_WR;
+        SET_MASK_P2;
+    #else
+        Pokitto::setDRAMptr(0,0); //needs to be called explicitly for pokitto_sim (no real controller!)
+    #endif
+    
+    uint8_t lineBuffer[screenWidth + 16];
+    uint8_t *line = lineBuffer + 8;
+    auto mask = Pokitto::Display::TASMask;
+    bool disabled = mask & 1;
+    uint32_t maskY = 8;
+
+    constexpr int lineFillerCount = sizeof(Pokitto::Display::lineFillers) / sizeof(Pokitto::Display::lineFillers[0]);
+    int fillerCount = 0;
+    TAS::LineFiller fillers[lineFillerCount];
+    for(int i=0; i<lineFillerCount; i++){
+        auto filler = Pokitto::Display::lineFillers[i];
+        if(!filler || filler == TAS::NOPFiller)
+            continue;
+        fillers[fillerCount++] = filler;
+    }
+
+    for(uint32_t y=0; y<screenHeight; ++y ){
+        #ifdef POK_SIM
+            Pokitto::setDRAMptr(0,y); //needs to be called explicitly for pokitto_sim (no real controller!)
+        #endif // POK_SIM
+
+        if(interlaceScreen){
+            if(frameJump){
+                disabled = (y&1);
+            }else{
+                disabled = !(y&1);
+            }
+        }
+
+
+        for( int i=0; i<fillerCount; ++i ){
+            fillers[i]( line, y, disabled );
+        }
+
+        flushLine(palette, line);
+    }
+}
 

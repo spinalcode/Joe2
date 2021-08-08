@@ -9,7 +9,7 @@
 #define PROJ_HIGH_RAM HIGH_RAM_ON
 
 // Enabling these 2 optinos causes my code to crash on first compile but work on the second compile.
-//#define PROJ_ENABLE_SOUND 1
+#define PROJ_ENABLE_SOUND 0
 //#define PROJ_FILE_STREAMING
 //#define PROJ_STREAMING_MUSIC    0
 //#define PROJ_SOUND_BUFFERED     0

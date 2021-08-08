@@ -31,7 +31,7 @@ const uint8_t menuBG[]={
 // print text
 void guiPrint(char x, char y, const char* text) {
   uint8_t numChars = strlen(text);
-  uint8_t x1 = 0;//2+x+28*y;
+  //uint8_t x1 = 0;//2+x+28*y;
   for (uint8_t t = 0; t < numChars; t++) {
     uint8_t character = text[t];
     guiBG[(x++)+27*y] = character;

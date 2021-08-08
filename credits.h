@@ -22,4 +22,8 @@ Joe 2 - A pigment of your imagination.
 
 
 
+problem in screen buffer column 15
+
+
+
 

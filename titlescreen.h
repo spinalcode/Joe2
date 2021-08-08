@@ -25,7 +25,6 @@ void titleScreen(){
             uint8_t buff[220];
 
             Pokitto::lcdPrepareRefresh();
-            int mainData = 1024+54; // main bitmap data in file
 
             for(int y=0; y<176; y++){
                 tsFile.read(buff, 220);
@@ -41,9 +40,9 @@ void titleScreen(){
         reSaturate(0,0,0);
         gameMode=1;
     
-        playingMusic1 = false;
-        loadLevel(1);
-        playingMusic1 = true;
+//        playingMusic1 = false;
+        loadLevel(2);
+//        playingMusic1 = true;
 
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
         Pokitto::Display::lineFillers[1] = myBGFiller2; // background map layer
@@ -51,13 +50,13 @@ void titleScreen(){
 
         Pokitto::Display::setTASRowMask(0b1111'11111111'11111111);
         // a little 'wide-screening' to remove some lines for higher frame rate
-        bg.screenTop=20;
-        bg.screenBottom=176-20;
+        //bg.screenTop = 0;
+        bg.screenBottom = 176-bg.screenTop;
         bg.screenHeight = bg.screenBottom-bg.screenTop;
         
         mustDrawTitleScreen=true;
         titleTimer=0;
-        startSong("/joe2/C_6000.pcm");
+//        startSong("/joe2/C_6000.pcm");
         player.numLives = maxLives;
         playerDying = 0;
     }
@@ -93,7 +92,6 @@ void gameOverScreen(){
             uint8_t buff[220];
 
             Pokitto::lcdPrepareRefresh();
-            int mainData = 1024+54; // main bitmap data in file
 
             for(int y=0; y<176; y++){
                 tsFile.read(buff, 220);
@@ -105,29 +103,8 @@ void gameOverScreen(){
     }
 
     if(_A_But[NEW]){
-        
-        reSaturate(0,0,0);
+        mustDrawTitleScreen = true;
         gameMode=0;
-    
-        playingMusic1 = false;
-        loadLevel(1);
-        playingMusic1 = true;
-
-        Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
-        Pokitto::Display::lineFillers[1] = myBGFiller2; // background map layer
-        Pokitto::Display::lineFillers[2] = spriteFill; // sprite layer
-
-        Pokitto::Display::setTASRowMask(0b1111'11111111'11111111);
-        // a little 'wide-screening' to remove some lines for higher frame rate
-        bg.screenTop=20;
-        bg.screenBottom=176-20;
-        bg.screenHeight = bg.screenBottom-bg.screenTop;
-        
-        mustDrawTitleScreen=true;
-        titleTimer=0;
-        startSong("/joe2/C_6000.pcm");
-        player.numLives = maxLives;
-        playerDying = 0;
     }
 
 }
@@ -140,7 +117,7 @@ void gameOverScreen(){
 
 
 
-
+/*
 
 void titleScreenOld(){
 
@@ -149,12 +126,12 @@ void titleScreenOld(){
 
         if(titleScratch==0){
             titleScratch=1;
-            startSong("/joe2/scratch.pcm");
+//            startSong("/joe2/scratch.pcm");
         }
     }
 
     if(Pokitto::Core::getTime() > titleTimer+8000 && mustDrawTitleScreen==true){
-        startSong("/joe2/C_6000.pcm");
+//        startSong("/joe2/C_6000.pcm");
         //titleTimer = Pokitto::Core::getTime();
 
 //    if(mustDrawTitleScreen==true) {
@@ -189,14 +166,6 @@ void titleScreenOld(){
             }
             int tempTime=Pokitto::Core::getTime();
             for(int top=176+rollSize; top>=-(rollSize+3); top-=1){
-                /*
-                updateButtons(); // update buttons
-                if(_A_But[NEW]){
-                    top=-tMinus;
-                    updateButtons(); // update buttons
-                }
-                */
-
                 for(int t=top; t<top+rollSize-1; t++){
                     int p = t+titleRoll[t-top];
                     if(p>=176) p-=176;
@@ -215,7 +184,7 @@ void titleScreenOld(){
                 }
 
                 Pokitto::Display::update(); // needed?
-                updateStream(); // keep the sound going
+//                updateStream(); // keep the sound going
             }
 
 
@@ -227,9 +196,9 @@ void titleScreenOld(){
         reSaturate(0,0,0);
         gameMode=1;
     
-        playingMusic1 = false;
+//        playingMusic1 = false;
         loadLevel(1);
-        playingMusic1 = true;
+//        playingMusic1 = true;
 
     
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
@@ -247,10 +216,9 @@ void titleScreenOld(){
         
         mustDrawTitleScreen=true;
         titleTimer=0;
-        startSong("/joe2/C_6000.pcm");
+//        startSong("/joe2/C_6000.pcm");
     }
 
 }
+*/
 
-void titleScreen2(){
-}

@@ -11,7 +11,7 @@ bool streamMusic = 1;
 const char* folderName = "/joe2/";
 
 const char* songnames[] = {
-"C_8000.pcm",
+"C_6000.pcm",
 };
 
 const char* sfxnames[] = {
@@ -72,8 +72,9 @@ sampletype snd[4]; // up to 4 sounds at once?
 
 #define audioBufferSize 512
 unsigned char *audioBuffer = (unsigned char *) 0x20000000;
-unsigned char audioBuffer2[audioBufferSize*4];// = (unsigned char *) 0x20000800;
-int bufferOffset[4]={ audioBufferSize*3,  0, audioBufferSize, audioBufferSize*2 };
+unsigned char audioBuffer2[1];// = (unsigned char *) 0x20000800;
+//int bufferOffset[4]={ audioBufferSize*3,  0, audioBufferSize, audioBufferSize*2 };
+const int bufferOffset[4]={ 1536,  0, 512, 1024 };
 
 uint8_t currentBuffer = 0;
 uint8_t completeBuffer = 0;         // Which section is full
@@ -81,7 +82,7 @@ long int audioOffset=0;
 
 // messing with sound
 bool playingMusic1 = false;
-bool playingMusic2 = false;
+//bool playingMusic2 = false;
 bool oldPlayingMusic1 = false;
 bool oldPlayingMusic2 = false;
 int globalVolume = 16;
@@ -179,11 +180,17 @@ inline uint8_t myMixSound()
     return number;
 }
 
-void clearAudioBuffer(int num=0){
+void clearAudioBuffer(){
+        for(int t=0; t<audioBufferSize*4; t++){
+            audioBuffer[t] = 127;
+            //audioBuffer2[t] = 127;
+        }
+    return;
+/*
     if(num==0){
         for(int t=0; t<audioBufferSize*4; t++){
             audioBuffer[t] = 127;
-            audioBuffer2[t] = 127;
+            //audioBuffer2[t] = 127;
         }
     }else if(num==1){
         for(int t=0; t<audioBufferSize*4; t++){
@@ -194,6 +201,7 @@ void clearAudioBuffer(int num=0){
             audioBuffer2[t] = 127;
         }
     }
+*/
 }
 
 inline void updateStream(){
@@ -202,7 +210,7 @@ inline void updateStream(){
         completeBuffer = currentBuffer;
         if(playingMusic1){
             if(!musicFile.read(&audioBuffer[bufferOffset[completeBuffer]], audioBufferSize)){
-                clearAudioBuffer(1);
+                clearAudioBuffer();
                 playingMusic1 = false;
                 //playRandomTune();
                 
@@ -210,22 +218,24 @@ inline void updateStream(){
                 timerCounter++;
             }
         }
-        if(playingMusic2){
-            if(!sfxFile.read(&audioBuffer2[bufferOffset[completeBuffer]], audioBufferSize)){
-                clearAudioBuffer(2);
-                playingMusic2 = false;
-            }
-        }
+
+        //if(playingMusic2){
+            if(!sfxFile.read(&audioBuffer2[0], 0)){}
+        //}
+
     }
 }
 
 inline void audioTimer(void){
 	if (Chip_TIMER_MatchPending(LPC_TIMER32_0, 1)) {
         writeDAC( myMixSound() );
-        if(++audioOffset == audioBufferSize*4){
-            audioOffset = 0;
-        }
-        currentBuffer = audioOffset/audioBufferSize;
+        //((++audioOffset)&=2047);
+        //if(++audioOffset == audioBufferSize*4){
+        //    audioOffset = 0;
+        //}
+        //currentBuffer = audioOffset/audioBufferSize;
+        // audioBufferSize = 512, *4 = 2048.
+        currentBuffer = ((++audioOffset)&=2047)/audioBufferSize;
 
     	Chip_TIMER_ClearMatch(LPC_TIMER32_0, 1);
     }
@@ -265,10 +275,11 @@ void startSong(const char* filename){
         initTimer(LISTENINGSAMPLERATE);
     }else{
         playingMusic1 = false;
-        clearAudioBuffer(1);
+        clearAudioBuffer();
     }
 }
 
+/*
 void startBGFX(const char* filename){
     if(sfxFile.openRO(filename)){
         playingMusic2 = true;
@@ -277,13 +288,13 @@ void startBGFX(const char* filename){
         clearAudioBuffer(2);
     }
 }
-
+*/
 
 void playRandomTune(){
-    clearAudioBuffer(1);
-    clearAudioBuffer(2);
+    clearAudioBuffer();
+//    clearAudioBuffer(2);
 
-    char fullSongName[256];
+    char fullSongName[32];
     
     //int temp = random( (sizeof(songnames)/sizeof(songnames[0])) );
     //while(temp==currentSongNumber){
@@ -296,6 +307,7 @@ void playRandomTune(){
     startSong(fullSongName);
 }
 
+/*
 void playBGFX(int number){
     if(playingMusic2 == false){
         char fullSFXName[128];
@@ -303,4 +315,5 @@ void playBGFX(int number){
         startBGFX(fullSFXName);
     }
 }
+*/
 

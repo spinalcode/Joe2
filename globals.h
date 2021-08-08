@@ -1,20 +1,29 @@
+#define maxLives 10
+
+#define LEVMAIN 0 // main level map
+#define LEVMID 1 // background scenery map
+
 // pointers to our data
 const uint8_t* levelData = nullptr;
 const uint16_t* midmap = nullptr;
 const uint8_t* tiles = nullptr;
 const uint8_t* collisionTile = nullptr;
 
+bool interlaceScreen=false;
+bool frameJump = false;
+
 // Make a hotswap area for level data
 // size = 72*1024k, unique id = 0
 //using LevelData = Hotswap<48*1024, 0>; // multiple of 8kb = Palette and level tiles
-using LevelData = Hotswap<56*1024, 0>; // multiple of 8kb = Palette and level tiles
+using LevelData = Hotswap<64*1024, 0>; // multiple of 8kb = Palette and level tiles
 //using LevelData = Hotswap<64*1024, 0>; // multiple of 8kb = Palette and level tiles
 
 int lastLoad=0;
 int mapPos;
 
 #define PRESCAN 88 // left side of scanline that is off screen
-uint16_t scanLine[440]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
+uint16_t scanLine[396]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
+uint8_t myLine[396]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
 
 int myVolume = 5;
 
@@ -26,7 +35,6 @@ int myVolume = 5;
 
 uint8_t cursorFrame=0;
 bool renderMenuLayer = false;
-
 
 uint8_t frameSkip;
 int fpsCount=0;
@@ -53,14 +61,13 @@ const uint8_t playerDeathHatY[]={4,4,4,4,4};
 const uint8_t playerDeathHatFlip[]={0,0,1,1,1};
 #define invincibleFrames  100 // how many frames to remain invincible
 uint8_t invincibleCount;
-#define maxLives 10
 
 
 bool gamePaused = false;
 
 
 // for my own sprite renderer
-#define NUMSPRITES 64
+#define NUMSPRITES 48
 struct SPRITE_DATA {
     const uint16_t *paletteData; // palette data
     const uint8_t *imageData; // image data
@@ -90,7 +97,7 @@ struct ANIMATION_DATA {
     int type;
     bool used=false;
     int frameCount=0;
-} animSprite[20];
+} animSprite[10];
 
 
 struct DOOR_DATA {
@@ -104,10 +111,6 @@ struct DOOR_DATA {
 uint8_t numDoors = 0;
 uint8_t atDoor = 99;
 
-//char levelFilename[32];
-//char levelTilename[32];
-//uint32_t layerNumber=0;
-
 int levNum=0;
 uint8_t tileType[20]; // to be read from the first row in the collision map
 #define NOTHING 0
@@ -119,6 +122,7 @@ int DOORCOLOUR = 11;
 const uint8_t satRamp[]={0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,5,5,6,6,6,7,7,8,8,9,9,10,11,11,12,13,14,15,15,16,17,18,19,20,21,22,23,25,26,27,28,30,31,32,34,35,37,39,40,42,44,45,47,48,51,53,54,57,58,60,62,64,67,68,71,72,75,76,79,81,82,85,87,90,92,93,95,96,98,100};
 
 struct BACKGROUND_DATA {
+    uint16_t miniMap[2+56*44]; // the window on the whole map
     int windowX; // position within the map window
     int windowY; // position within the map window
     int mapX; // scroll amount of main map
@@ -127,7 +131,29 @@ struct BACKGROUND_DATA {
     int oldMapY; // scroll amount of main map
     int mapWidth; // width of map
     int mapHeight; // height of map
-    uint16_t miniMap[2+56*44]; // the window on the whole map
+    int screenX = 0;
+    int screenY = 0;
+    int oldScreenX = 0;
+    int oldScreenY = 0;
+
+    uint16_t midminiMap[2+56*44]; // the window on the whole map
+    int midwindowX; // position within the map window
+    int midwindowY; // position within the map window
+    int midmapX; // scroll amount of main map
+    int midmapY; // scroll amount of main map
+    int midoldMapX; // scroll amount of main map
+    int midoldMapY; // scroll amount of main map
+    int midmapWidth; // width of map
+    int midmapHeight; // height of map
+    int midscreenX = 0;
+    int midscreenY = 0;
+    int midoldScreenX = 0;
+    int midoldScreenY = 0;
+
+
+    int multiplyX;
+    int multiplyY;
+
     uint8_t numRed;
     uint8_t numGreen;
     uint8_t numBlue;
@@ -195,7 +221,7 @@ struct COLLECTABLES_DATA {
     uint8_t step;
     uint8_t frameCount=0;
     uint8_t bitDepth;
-} items[128];
+} items[100];
 int maxItems=0;
 
 int wordCollected[3];
@@ -208,10 +234,6 @@ struct VOLUME_DATA {
     int sfx = 100;  // sfx volume
 } volume;
 
-int screenX = 0;
-int screenY = 0;
-int oldScreenX = screenX;
-int oldScreenY = screenY;
 int starCount=0;
 
 //int offsetAngle = 0;

@@ -2,7 +2,9 @@
 #include <File>
 #include "PokittoCookie.h"
 
+#ifndef POK_SIM
 #include <SoftwareI2C.h>
+#endif
 
 #include "globals.h"
 #include "sound.h"
@@ -19,12 +21,16 @@
 #include "levelsandmaps.h"
 #include "easing.h"
 #include "titlescreen.h"
+#include "settings.h"
 
 void write_command_16(uint16_t data);
 void write_data_16(uint16_t data);
 
+#ifndef POK_SIM
 // set hardware volume quite low
 SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
+#endif
+
 
 void waitButton(){
     updateButtons();
@@ -63,79 +69,6 @@ void make_pal(void){
 	}
 }
 
-int isdigit(int c){
-	return (c >= '0' && c <= '9');
-}
-
-// extracts the last positive integral value of string s
-// returns...
-// on success, the int value scanned
-// -1, if the string is null, empty, or not terminated by a number
-int extractLastIntegral(const char* s) {
-    int value = -1;
-    if (s && *s) {  // don't parse null and empty strings
-        const char *scanstr = s + strlen(s) - 1;
-        while (scanstr > s && isdigit(*(scanstr-1))) {
-            scanstr--;
-        }
-        sscanf(scanstr,"%d", &value);
-    }
-    return value;
-}
-
-
-/*
-void saveSettings(){
-    mkdir("/joe2/", 0777); // make sure folder exist
-    File f;
-    
-    if(f.openRW("/joe2/settings.ini",1,0)){
-        char tempText[20];
-        sprintf(tempText,"volume = %d\n",myVolume);
-        f.write(tempText);
-        f.close();
-    }
-}
-
-void loadSettings(){
-
-    char txtLine[64];
-    int tempChar;
-    int index = 0;
-    mkdir("/joe2/", 0777); // make sure folder exist
-    
-    File f;
-    
-    if(f.openRO("/joe2/settings.ini")){
-
-        int numStations = 0;
-        
-        while(f.read(&tempChar, 1)){
-    
-            if (tempChar == EOF) {
-                txtLine[index] = '\0';
-                break;
-            }
-    
-            if (tempChar == '\n') {
-                txtLine[index] = '\0';
-                index=0;
-                if(strncmp(txtLine, "volume", strlen("volume"))==0){
-                    myVolume = extractLastIntegral(txtLine);
-                }
-
-                continue;
-            }
-            else
-                txtLine[index++] = (char)tempChar;
-        }
-        
-    }else{
-        myVolume = 10;
-        //saveSettings();
-    }
-}
-*/
 
 void c_menu(){
     guiPrint(9,6, "    PAWS");
@@ -162,16 +95,14 @@ void c_menu(){
     updateButtons();
     if(_Up_But[NEW] && optionNumber>0) optionNumber--;
     if(_Down_But[NEW] && optionNumber<numOptions-1) optionNumber++;
-    if(_C_But[NEW]){
-        gamePaused = false;
-        renderMenuLayer = false;
-    }
 
     if(_A_But[RELEASED]){
         if(optionNumber==0){
             // Return to game
             gamePaused = false;
             renderMenuLayer = false;
+            spriteCount=0;
+            saveSettings();
         }
         if(optionNumber==2){
             // Exit the game
@@ -183,14 +114,37 @@ void c_menu(){
 
     if(optionNumber==1){
         if(_Left_But[NEW]){
-            if(myVolume > 0) myVolume--;
+            myVolume-=5;
+            if(myVolume <=0) myVolume = 0;
+            #ifndef POK_SIM
             swvolpot.write(0x5e, myVolume);
+            #endif
         }
         if(_Right_But[NEW]){
-            if(myVolume < 64) myVolume++;
+            myVolume+=5;
+            if(myVolume >=60) myVolume = 60;
+            #ifndef POK_SIM
             swvolpot.write(0x5e, myVolume);
+            #endif
         }
     }
+    
+    if(_C_But[NEW]){
+        printf("\n");
+        printf("\n");
+        int t=0;
+        printf("%d,\n",bg.miniMap[t++]);
+        printf("%d,\n",bg.miniMap[t++]);
+        for(int y=0; y<bg.miniMap[1]; y++){
+            for(int x=0; x<bg.miniMap[0]; x++){
+                printf("%d,",bg.miniMap[t++]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+        printf("\n");
+    }
+    
 };
 
 
@@ -251,25 +205,25 @@ void startAnimation(int x, int y, int x1, int y1, int speed, int itemType, int s
     animSprite[useSprite].used = true;
     animSprite[useSprite].frameCount = 1;
     animSprite[useSprite].frameSize = (imageData[0]*imageData[1])/(8/bitDepth);
-    printf("size:%d\n",animSprite[useSprite].frameSize);
+    //printf("size:%d\n",animSprite[useSprite].frameSize);
 
 }
 
 void renderSprites(){
-
 
     if(bg.totalGemsCollected == bg.totalGemsToCollect){
         for(int t=0; t<numDoors; t++){
             drawSprite(exitDoor[t].x-bg.mapX, exitDoor[t].y-bg.mapY, sprite_door, &pal[doorPalOffset],0,8);
         }
     }
-    
-    
+
     for(int t=0; t<maxItems; t++){
         if(items[t].collected == 0){
 
             items[t].frame++;
-            if(items[t].frame >= (items[t].maxFrame*items[t].speed)){items[t].frame=items[t].startFrame;}
+            if(items[t].frame >= (items[t].maxFrame*items[t].speed)){
+                items[t].frame=items[t].startFrame;
+            }
             
             if(items[t].type!=0){
                 int frame = items[t].frame/items[t].speed;
@@ -296,8 +250,7 @@ void renderSprites(){
                             }
                         }
                     }
-                    int flipMe = items[t].direction;
-                    drawSprite(theX, theY-items[t].offy, &items[t].imageData[frame*(2+items[t].frameSize)], items[t].paletteData, flipMe ,items[t].bitDepth);
+                    drawSprite(theX, theY-items[t].offy, &items[t].imageData[frame*(2+items[t].frameSize)], items[t].paletteData, items[t].direction ,items[t].bitDepth);
                 }
             }
         }
@@ -329,14 +282,16 @@ void renderSprites(){
         }
     }
 
+
     // animating sprites - items etc.
     int numAnimFrames = fpsCount/2;
     for(int t=MAX_AMINS; t; t--){
         if(animSprite[t].used==true){
             animSprite[t].frame++;
-            if(animSprite[t].frame >= (animSprite[t].maxFrame*animSprite[t].speed)){animSprite[t].frame=animSprite[t].startFrame;}
+            if(animSprite[t].frame >= (animSprite[t].maxFrame*animSprite[t].speed)){
+                animSprite[t].frame=animSprite[t].startFrame;
+            }
             int frame = animSprite[t].frame/animSprite[t].speed;
-            int flipme=0;
 
             drawSprite(animSprite[t].x, animSprite[t].y, &animSprite[t].imageData[frame*(2+animSprite[t].frameSize)], animSprite[t].paletteData,0,animSprite[t].bitDepth);
 
@@ -354,6 +309,7 @@ void renderSprites(){
             }
         }
     }
+
 
     // HUD
     if(HUD_gemTimer){
@@ -391,7 +347,7 @@ void renderSprites(){
         HUD_heartFrameCount++;
         if(HUD_heartFrameCount == HUD_heartTimerStart/2){
             player.numLives--;
-            playSound(1, sfx_pop, 100);
+//            playSound(1, sfx_pop, 100);
         }
 
         if(HUD_heartFrameCount>=32)HUD_heartFrameCount=0;
@@ -428,7 +384,6 @@ void checkItemCollisions(){
             items[t].frame++;
             if(items[t].frame >= items[t].maxFrame*items[t].speed){items[t].frame=items[t].startFrame;}
             if(items[t].type!=0){
-                int flipme=0;
                 int frame = (items[t].frame/items[t].speed);
 
                 int theX = items[t].x-bg.mapX;
@@ -447,7 +402,7 @@ void checkItemCollisions(){
                                     //bg.satRed += bg.redPercent;
                                     bg.countRed++;
                                     items[t].collected = 1;
-                                    playSound(1, sfx_drop, 300, random(63)+192);
+//                                    playSound(1, sfx_drop, 300, random(63)+192);
                                     updateColours();
                                     break;
                                 case 2:
@@ -455,7 +410,7 @@ void checkItemCollisions(){
                                     //bg.satGreen += bg.greenPercent;
                                     bg.countGreen++;
                                     items[t].collected = 1;
-                                    playSound(1, sfx_drop, 300, random(63)+192);
+//                                    playSound(1, sfx_drop, 300, random(63)+192);
                                     updateColours();
                                     break;
                                 case 3:
@@ -463,7 +418,7 @@ void checkItemCollisions(){
                                     //bg.satBlue += bg.bluePercent;
                                     bg.countBlue++;
                                     items[t].collected = 1;
-                                    playSound(1, sfx_drop, 300, random(63)+192);
+//                                    playSound(1, sfx_drop, 300, random(63)+192);
                                     updateColours();
                                     break;
 
@@ -481,7 +436,7 @@ void checkItemCollisions(){
                                 case 9:
                                     startAnimation(theX, theY, 89+((items[t].type-10)*14) ,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, items[t].imageData, items[t].paletteData, items[t].bitDepth);
                                     items[t].collected = 1;
-                                    playSound(1, sfx_drop, 300, random(63)+192);
+//                                    playSound(1, sfx_drop, 300, random(63)+192);
                                     break;
                                 case 10: // J/O/E
                                 case 11: // J/O/E
@@ -489,7 +444,7 @@ void checkItemCollisions(){
                                     startAnimation(theX, theY, 89+((items[t].type-10)*14) ,bg.screenTop, items[t].speed, items[t].type, items[t].startFrame, items[t].maxFrame, items[t].imageData, items[t].paletteData, items[t].bitDepth);
                                     items[t].collected = 1;
                                     //wordCollected[items[t].type-10]=1;
-                                    playSound(1, sfx_drop, 300, random(63)+192);
+//                                    playSound(1, sfx_drop, 300, random(63)+192);
                                     break;
                             }
                             
@@ -514,8 +469,13 @@ void gameLogic(){
 
     player.onGround = false;
 
-    //if(_Up_But[NEW]){ myVolume++;}
-    //if(_Down_But[NEW]){ myVolume--;}
+    if(_C_But[NEW]){
+        gamePaused = !gamePaused;
+        if(gamePaused){renderMenuLayer = true;}else{renderMenuLayer=false;}
+        for(int t=0; t<sizeof(menuBG); t++){
+            guiBG[t] = menuBG[t];
+        }
+    }
 
     if(playerDying == 2){
         invincibleCount++;
@@ -527,84 +487,75 @@ void gameLogic(){
 
     if(playerDying == 0 || playerDying == 2){
 
-            //if(_Left_But[NEW]){ player.flip = 1;}
-            //if(_Right_But[NEW]){ player.flip = 0;}
-
-            if( !_Up_But[HELD] &&
-                !_Down_But[HELD] &&
-                !_Left_But[HELD] &&
-                !_Right_But[HELD]){
-                    // reset the player to standing if no buttons pressed.
-                    player.frame = 0;
-                    player.step = 0;
-            }
-        
-        /*
-            if( _Left_But[RELEASED] || _Right_But[RELEASED]){
+        if( !_Up_But[HELD] &&
+            !_Down_But[HELD] &&
+            !_Left_But[HELD] &&
+            !_Right_But[HELD]){
+                // reset the player to standing if no buttons pressed.
                 player.frame = 0;
                 player.step = 0;
-            }
-        */
-            if(_B_But[HELD]){player.speed =PLAYER_SPEED*1.5;}else{player.speed = PLAYER_SPEED;}
+        }
         
-            if(_Right_But[HELD]){
-                player.flip = 0;
-                while(rightCollision(player.x>>8, player.y>>8)==SOLID && rightCollision((player.x>>8)+1, (player.y>>8)-8)==SOLID){
-                    player.x -= 128;
-                }
-                player.x += player.speed;
-                if(frameSkip==0){player.step ++;}
-            }
+        if(_B_But[HELD]){player.speed =PLAYER_SPEED*1.5;}else{player.speed = PLAYER_SPEED;}
         
-            if(_Left_But[HELD]){
-                player.flip = 1;
-                while(leftCollision(player.x>>8, player.y>>8)==SOLID && leftCollision((player.x>>8)-1, (player.y>>8)-8)==SOLID){
-                    player.x += 128;
-                }
-                player.x -= player.speed;
-                if(frameSkip==0){player.step ++;}
+        if(_Right_But[HELD]){
+            player.flip = 0;
+            while(rightCollision(player.x>>8, player.y>>8)==SOLID && rightCollision((player.x>>8)+1, (player.y>>8)-8)==SOLID){
+                player.x -= 128;
             }
+            player.x += player.speed;
+            if(frameSkip==0){player.step ++;}
+        }
         
-            if (player.step >= 2) {
-                player.frame++;
-                player.step = 0;
+        if(_Left_But[HELD]){
+            player.flip = 1;
+            while(leftCollision(player.x>>8, player.y>>8)==SOLID && leftCollision((player.x>>8)-1, (player.y>>8)-8)==SOLID){
+                player.x += 128;
             }
+            player.x -= player.speed;
+            if(frameSkip==0){player.step ++;}
+        }
         
-            if (player.frame >= 4) {
-                player.frame = 0;
-            }
+        if (player.step >= 2) {
+            player.frame++;
+            player.step = 0;
+        }
         
-            if(_Down_But[NEW]){
-                player.dropping = true;
-            }
+        if (player.frame >= 4) {
+            player.frame = 0;
+        }
         
-            if(_Up_But[NEW]){
-                bool moved=false;
-                for(int t=0; t<numDoors; t++){
-                    if((player.x>>8)+player.centre >= exitDoor[t].x && (player.x>>8)+player.centre <= exitDoor[t].x + sprite_door[0]){
-                        if((player.y>>8)+player.centre >= exitDoor[t].y && (player.y>>8)+player.centre <= exitDoor[t].y + sprite_door[1]){
-                            
-                            // bg.totalGemsCollected == bg.totalGemsToCollect
-                            // hidden room
-                            if(moved==false){
-                                moved = true;
-                                int toDoor = t+1;
-                                if(toDoor == numDoors)toDoor=0;
-                                //printf("Door:%d\n",toDoor); // not printing?
-                                player.x = exitDoor[toDoor].x<<8;
-                                player.y = exitDoor[toDoor].y<<8;
-                            }
+        if(_Down_But[NEW]){
+            player.dropping = true;
+        }
+        
+        if(_Up_But[NEW]){
+            bool moved=false;
+            for(int t=0; t<numDoors; t++){
+                if((player.x>>8)+player.centre >= exitDoor[t].x && (player.x>>8)+player.centre <= exitDoor[t].x + sprite_door[0]){
+                    if((player.y>>8)+player.centre >= exitDoor[t].y && (player.y>>8)+player.centre <= exitDoor[t].y + sprite_door[1]){
+                        // hidden room
+                        if(moved==false){
+                            moved = true;
+                            int toDoor = t+1;
+                            if(toDoor == numDoors)toDoor=0;
+                            //printf("Door:%d\n",toDoor); // not printing?
+                            player.x = exitDoor[toDoor].x<<8;
+                            player.y = exitDoor[toDoor].y<<8;
                         }
                     }
                 }
             }
-
+        }
     } // player dying
 
     // Add gravity
-    player.vy += GRAVITY; // apply gravity to falling speed
-    if(player.vy > MAXGRAVITY) player.vy = MAXGRAVITY; // limit falling speed
-    player.y += player.vy; // apply falling speed to player position
+    // but only if you're on the screen (collision issues)
+    if(player.y >>8 < bg.mapY+176 && player.y >>8 > bg.mapY){
+        player.vy += GRAVITY; // apply gravity to falling speed
+        if(player.vy > MAXGRAVITY) player.vy = MAXGRAVITY; // limit falling speed
+        player.y += player.vy; // apply falling speed to player position
+    }
 
     if(player.vy < 0){
         // jumping to check headroom
@@ -660,7 +611,6 @@ void gameLogic(){
         player.jumping = false;
     }
 
-
     // check for 'death tiles'
     if (checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.centre) == DEATHCOLOUR){
         //gameMode = 0;
@@ -668,7 +618,6 @@ void gameLogic(){
         player.y = player.lastGroundY;
         playerDying=1;
     }
-
 
     int checkAmount = 7;
     for(int t=0; t<checkAmount; t++){
@@ -683,7 +632,6 @@ void gameLogic(){
         }
     }
 
-
     if(playerDying == 0 || playerDying == 2){
 
     	if (_A_But[NEW]){
@@ -692,7 +640,7 @@ void gameLogic(){
                 if(onGround[t] && checked == false){
                     checked = true;
             	    player.vy = -player.jumpHeight; // Start jumping
-                    playSound(0, sfx_jump, 100, random(63)+192);
+//                    playSound(0, sfx_jump, 100, random(63)+192);
                 }
             }
     	}
@@ -706,26 +654,38 @@ void gameLogic(){
     bg.mapX = bg.oldMapX >>8;
     bg.mapY = bg.oldMapY >>8;
 
-    //printf("x:%d\n",bg.mapX);
-    //printf("y:%d\n",bg.mapY);
-
     if(bg.mapX<0) bg.mapX=0;
-    if(bg.mapX>(bg.mapWidth*bgTileSizeW)-220) bg.mapX=(bg.mapWidth*bgTileSizeW)-220;
+    if(bg.mapX>(bg.mapWidth*BG_TILE_SIZE_W)-220) bg.mapX=(bg.mapWidth*BG_TILE_SIZE_W)-220;
     if(bg.mapY<0) bg.mapY=0;
-    if(bg.mapY>(bg.mapHeight*bgTileSizeH)-(bg.screenHeight+bg.screenTop)) bg.mapY=(bg.mapHeight*bgTileSizeH)-(bg.screenHeight+bg.screenTop);
+    if(bg.mapY>(bg.mapHeight*BG_TILE_SIZE_H)-(bg.screenHeight+bg.screenTop)) bg.mapY=(bg.mapHeight*BG_TILE_SIZE_H)-(bg.screenHeight+bg.screenTop);
 
-    oldScreenX = screenX;
-    oldScreenY = screenY;
-    screenX = bg.mapX/224;
-    screenY = bg.mapY/176;
+    bg.oldScreenX = bg.screenX;
+    bg.oldScreenY = bg.screenY;
+    bg.screenX = bg.mapX/224;
+    bg.screenY = bg.mapY/176;
 
-	if(oldScreenX != screenX || oldScreenY != screenY){
-        int mapPosX = screenX * 224;
-        int mapPosY = screenY * 176;
-        updateMap( mapPosX/8 , mapPosY/8, levelNumber);
+	if(bg.oldScreenX != bg.screenX || bg.oldScreenY != bg.screenY){
+        int mapPosX = bg.screenX * 224;
+        int mapPosY = bg.screenY * 176;
+        updateMap( mapPosX/8 , mapPosY/8, levelNumber, LEVMAIN);
 	}
     bg.windowX = bg.mapX%224;
 	bg.windowY = bg.mapY%176;
+
+    bg.midoldScreenX = bg.midscreenX;
+    bg.midoldScreenY = bg.midscreenY;
+    int tempMX = (bg.mapX * bg.multiplyX)>>8;
+    int tempMY = (bg.mapY * bg.multiplyY)>>8;
+    bg.midscreenX = tempMX/224;
+    bg.midscreenY = tempMY/176;
+
+	if(bg.midoldScreenX != bg.midscreenX || bg.midoldScreenY != bg.midscreenY){
+        int mapPosX = bg.midscreenX * 224;
+        int mapPosY = bg.midscreenY * 176;
+        updateMap( mapPosX/8 , mapPosY/8, levelNumber, LEVMID);
+	}
+    bg.midwindowX = tempMX%224;
+	bg.midwindowY = tempMY%176;
 
     // draw player sprite
     player.hatX = 1;
@@ -742,8 +702,7 @@ void gameLogic(){
         player.hatX *=6;
         player.hatY = 2;
     }
-
-    if(player.vy>-200 && player.vy<200){
+    else if(player.vy>-200 && player.vy<200){
         if(player.jumping){
             player.frame=0;
             player.hatX = 4;
@@ -755,7 +714,7 @@ void gameLogic(){
         }
     }
 
-    sprites[0].imageData = player_sprite[player.frame];
+    //sprites[0].imageData = player_sprite[player.frame];
 
     checkItemCollisions();
     //moveEnemies();
@@ -776,7 +735,7 @@ int main(){
 
     PC::begin();
 
-    //PC::setFrameRate(60);
+    //PC::setFrameRate(20);
 
     PD::invisiblecolor = 0;
     PD::adjustCharStep = 0;
@@ -798,36 +757,43 @@ int main(){
     frameSkip=0;
     
     Pokitto::Core::update(0); // needed first to setup IRQ that I will 'borrow' for my own sound.
-    //playRandomTune();
+//    playRandomTune();
     
-    clearAudioBuffer(1);
-    clearAudioBuffer(2);
-    startSong("/joe2/flute.pcm");
+//    clearAudioBuffer();
+    //clearAudioBuffer(2);
+//    startSong("/joe2/flute.pcm");
 
     //if(myVolume>64){myVolume=64;}
     //if(myVolume<0){myVolume=0;}
+    #ifndef POK_SIM
     swvolpot.write(0x5e, myVolume);
+    #endif
 
     long int lastMillis = PC::getTime();
     long int titleTimer = PC::getTime();
 
-    //saveSettings(); // test
     myVolume = 10;
+    loadSettings(); // test
+    #ifndef POK_SIM
     swvolpot.write(0x5e, myVolume);
+    #endif
+
+    long int frameCount=0;
 
     while( PC::isRunning() ){
         
-        updateStream();
+        //updateStream();
+
         if(frameSkip==0){
             fpsCounter++;
             if( !PC::update() ) continue;
-        }else{
+		}else{
             PC::update(0); // don't update screen.
             spriteCount=0; // reset the visible sprites ready for redraw
             if(gamePaused) c_menu();
         }
-        frameSkip = 1-frameSkip;
 
+        frameSkip = 1-frameSkip;
 
         if(gamePaused==false){
             switch(gameMode){
@@ -848,31 +814,18 @@ int main(){
         }
 
         updateButtons(); // update buttons
-        if(_C_But[NEW]){
-            gamePaused = !gamePaused;
-            
-            for(int t=0; t<sizeof(menuBG); t++){
-                guiBG[t] = menuBG[t];
-            }
-            
-            if(gamePaused){renderMenuLayer = true;}else{renderMenuLayer=false;}
-        }
-
 
         char tempText[64];
+/*
+        for(int t=0; t<10; t++){
+            sprintf(tempText,"%d",bg.miniMap[t+15]);
+            myPrint(t*20,bg.screenBottom-16,tempText);
+        }
+*/
 
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,bg.screenBottom-8,tempText);
 
-
-        sprintf(tempText,"Lives:%d",player.numLives);
-        myPrint(0,bg.screenBottom-16,tempText);
-
-        //sprintf(tempText,"Hit:%d",checkCollision((player.x>>8)+player.centre, (player.y>>8)+player.centre));
-        //sprintf(tempText,"Hit:%d",sizeof(enemy1)/sizeof(enemy1[0]));
-        //myPrint(0,bg.screenBottom-16,tempText);
-
-//        sprintf(tempText,"FPS:%d",PC::getTime()); // for some reason the fps timer doesn't work unless I do this.
         if(PC::getTime() >= lastMillis+1000){
             lastMillis = PC::getTime();
             fpsCount = fpsCounter;
