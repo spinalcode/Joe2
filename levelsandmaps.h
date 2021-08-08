@@ -119,31 +119,8 @@ void updateMap(int mx, int my, int levNum, int map){
 }
 
 
-/*
+
 void initMap(int levNum){
-    char levelFilename[64];
-    sprintf(levelFilename,"joe2/%02d.bin",levNum);
-    File file1;
-    if(file1.openRO(levelFilename)){
-        file1.read(&bg.mapWidth, 2);
-        file1.read(&bg.mapHeight, 2);
-    }
-    file1.close();
-}
-*/
-void loadLevel(int levNum){
-
-    levelNumber=levNum;
-    srand(Pokitto::Core::getTime());
-
-    bg.numRed = 0;
-    bg.numGreen;
-    bg.numBlue;
-    bg.totalGemsCollected = 0;
-
-    int paletteSize = 512;
-
-//    initMap(levNum);
     char levelFilename[64];
     sprintf(levelFilename,"joe2/%02d.bin",levNum);
     File file1;
@@ -153,24 +130,18 @@ void loadLevel(int levNum){
         file1.read(&bg.mapHeight, 2);
         printf("mapHeight:%d\n",bg.mapHeight);
     }
-    file1.close();
+    //file1.close();
 
     sprintf(levelFilename,"joe2/%02dmid.bin",levNum);
     if(file1.openRO(levelFilename)){
         file1.read(&bg.midmapWidth, 2);
         file1.read(&bg.midmapHeight, 2);
     }
-    file1.close();
+    //file1.close();
+}
 
-//    printf("mmw:%d mw:%d\n",bg.midmapWidth,bg.mapWidth);
-
-    bg.multiplyX = (bg.midmapWidth<<8) / (bg.mapWidth+(bg.midmapWidth*2));
-    bg.multiplyY = (bg.midmapHeight<<8) / (bg.mapHeight+(bg.midmapHeight*2));
-//    printf("mx:%d my:%d\n",bg.multiplyX,bg.multiplyY);
-
-
-    char levelTilename[32];
-    sprintf(levelTilename,"joe2/%02dData.bin",levNum);
+void loadHotSwapData(const char*levelTilename){
+    int paletteSize = 512;
 
     // hotswap the level data
     levelData = LevelData::load(levelTilename); 
@@ -183,50 +154,88 @@ void loadLevel(int levNum){
     for(int t=0; t<16; t++){
         Pokitto::Display::palette[t+240] = color_sprite_pal[t];
     }
+}
 
-
-    uint16_t mapSize[2];
-    File levfile;
-    //char levelFilename[32];
-    sprintf(levelFilename,"joe2/%02d.bin",levNum);
-    if(levfile.openRO(levelFilename))
-        levfile.read(mapSize, sizeof(mapSize));
-    
-    // check collision map for collectable tilesOffset
-    mapWidth = mapSize[0];
-    mapHeight = mapSize[1];
+void resetLevelData(){
 
     player.x = 0;
     player.y = 0;
     numGems = 0;
     maxItems=0;
-    //maxEnemies=0;
-    
+
     bg.numRed=0;
     bg.numBlue=0;
     bg.numGreen=0;
-    
-    int x=0;
-    int y=0;
 
     player.startX = 0;
     player.startY = 0;
-    //bool doorLoaded = false;
-    int lettersFound=0;
+
     numDoors=0;
     for(int t=0; t<sizeof(exitDoor)/sizeof(exitDoor[0]); t++){
         exitDoor[t].visible = false;
     }
 
+    bg.countRed=0;
+    bg.countGreen=0;
+    bg.countBlue=0;
+    
+    wordCollected[0]=0;
+    wordCollected[1]=0;
+    wordCollected[2]=0;
+    atDoor = 99;
+    
+}
+
+
+
+
+void loadLevel(int levNum){
+
+    resetLevelData();
+
+    levelNumber=levNum;
+    srand(Pokitto::Core::getTime());
+
+    bg.numRed = 0;
+    bg.numGreen;
+    bg.numBlue;
+    bg.totalGemsCollected = 0;
+
+    initMap(levNum);
+
+    // multiplyer for bacground scenery offset
+    bg.multiplyX = (bg.midmapWidth<<8) / (bg.mapWidth+(bg.midmapWidth*2));
+    bg.multiplyY = (bg.midmapHeight<<8) / (bg.mapHeight+(bg.midmapHeight*2));
+
+    char levelTilename[32];
+    sprintf(levelTilename,"joe2/%02dData.bin",levNum);
+
+    loadHotSwapData(levelTilename);
+
+
+    uint16_t mapSize[2];
+    char levelFilename[64];
+    sprintf(levelFilename,"joe2/%02d.bin",levNum);
+    File file1;
+    if(file1.openRO(levelFilename))
+        file1.read(mapSize, sizeof(mapSize));
+    
+    // check collision map for collectable tilesOffset
+    mapWidth = mapSize[0];
+    mapHeight = mapSize[1];
+
+    int lettersFound=0; // we count the letter sprite items as they are loaded, it give the appearance of random placement
+
+    int x=0;
+    int y=0;
     for(int t=0; t<(mapWidth*mapHeight); t++){
         uint16_t curTile; // each tile is represented by 16bit, with the collision info being here -> 0111110000000000
-        levfile.read(&curTile, sizeof(curTile));
+        file1.read(&curTile, sizeof(curTile));
         if(x==mapWidth){x=0; y++;}
 
         if(x<20 && y==0){
-            tileType[x]=((curTile >> 10)&31);
+            tileType[x]=((curTile >> 10)&31); // some tiles have 'types' as they are objects to be collected
         }
-
 
         if(y>1){ // skip first line as it has control blocks for numbering
 
@@ -380,19 +389,9 @@ void loadLevel(int levNum){
         }// y>0
         x++;
     }
-    levfile.close();
+    //file1.close();
 
-    bg.countRed=0;
-    bg.countGreen=0;
-    bg.countBlue=0;
-    
-    wordCollected[0]=0;
-    wordCollected[1]=0;
-    wordCollected[2]=0;
-    atDoor = 99;
-
-
-    bg.totalGemsToCollect = bg.numRed+bg.numGreen+bg.numBlue;
+   bg.totalGemsToCollect = bg.numRed+bg.numGreen+bg.numBlue;
 
     player.x = player.startX;
     player.y = player.startY;
@@ -410,10 +409,13 @@ void loadLevel(int levNum){
     bg.screenY = bg.mapY/176;
     int mapPosX = bg.screenX * 224;
     int mapPosY = bg.screenY * 176;
+    // update the main level map
     updateMap( mapPosX/8 , mapPosY/8, levelNumber, LEVMAIN);
+
     bg.windowX = bg.mapX%224;
 	bg.windowY = bg.mapY%176;
-
+    
+    // update the background scenery map
     updateMap( mapPosX/8 , mapPosY/8, levelNumber, LEVMID);
 
     bg.oldMapX = player.x-28160;
