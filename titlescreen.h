@@ -4,6 +4,7 @@ void renderTitleScreen(){
 
     if(mustDrawTitleScreen==true) {
         mustDrawTitleScreen = false;
+        startSong("/joe2/flute.pcm");
         Pokitto::Display::setTASRowMask(0b0000'00000000'00000000);
         File tsFile;
         // titlescreen.bmp MUST be 8bit and upside down. Ther is no error checking!
@@ -47,17 +48,17 @@ void titleScreen(){
         reSaturate(0,0,0);
         gameMode=1;
     
-//        playingMusic1 = false;
-        loadLevel(2);
-//        playingMusic1 = true;
+        playingMusic1 = false;
+        loadLevel(levelNumber);
+        playingMusic1 = true;
 
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
         Pokitto::Display::lineFillers[1] = myBGFiller2; // background map layer
-        Pokitto::Display::lineFillers[3] = spriteFill; // sprite layer
+        Pokitto::Display::lineFillers[2] = spriteFill; // sprite layer
 
         Pokitto::Display::setTASRowMask(0b1111'11111111'11111111);
         // a little 'wide-screening' to remove some lines for higher frame rate
-        //bg.screenTop = 0;
+        bg.screenTop = 16;
         bg.screenBottom = 176-bg.screenTop;
         bg.screenHeight = bg.screenBottom-bg.screenTop;
         

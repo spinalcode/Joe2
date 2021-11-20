@@ -15,7 +15,7 @@ bool frameJump = false;
 // Make a hotswap area for level data
 // size = 72*1024k, unique id = 0
 //using LevelData = Hotswap<48*1024, 0>; // multiple of 8kb = Palette and level tiles
-using LevelData = Hotswap<64*1024, 0>; // multiple of 8kb = Palette and level tiles
+using LevelData = Hotswap<48*1024, 0>; // multiple of 8kb = Palette and level tiles
 //using LevelData = Hotswap<64*1024, 0>; // multiple of 8kb = Palette and level tiles
 
 int lastLoad=0;
@@ -23,14 +23,13 @@ int mapPos;
 
 #define PRESCAN 88 // left side of scanline that is off screen
 uint16_t scanLine[396]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
-uint8_t myLine[396]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
 
 int myVolume = 5;
 
 #define MAXSTEP 64
 #define MAXSPEED 512
 #define PLAYER_SPEED 512
-#define MAX_AMINS 20
+#define MAX_ANIMS 20
 #define GEM_ANIM_SPEED 3
 
 uint8_t cursorFrame=0;
@@ -78,6 +77,7 @@ struct SPRITE_DATA {
     uint8_t bit;
 } sprites[NUMSPRITES];
 int spriteCount = -1;
+uint8_t spriteLine[176];
 
 struct ANIMATION_DATA {
     const uint16_t *paletteData; // palette data
@@ -97,9 +97,10 @@ struct ANIMATION_DATA {
     int type;
     bool used=false;
     int frameCount=0;
-} animSprite[10];
+} animSprite[MAX_ANIMS+1];
 
 
+#define MAXDOORS  20
 struct DOOR_DATA {
     int x;
     int y;
@@ -107,7 +108,7 @@ struct DOOR_DATA {
     uint8_t speed = 6;
     uint8_t loadDoorCounter=0;
     uint8_t frame = 0;
-} exitDoor[4];
+} exitDoor[MAXDOORS];
 uint8_t numDoors = 0;
 uint8_t atDoor = 99;
 
@@ -201,6 +202,7 @@ struct PLAYER_DATA {
 
 uint8_t onGround[10]; // buffer of being on the ground, for safer jumping
 
+#define MAXIMUMITEMS 100
 struct COLLECTABLES_DATA {
     const uint16_t *paletteData; // palette data
     const uint8_t *imageData; // image data
@@ -221,7 +223,7 @@ struct COLLECTABLES_DATA {
     uint8_t step;
     uint8_t frameCount=0;
     uint8_t bitDepth;
-} items[100];
+} items[MAXIMUMITEMS];
 int maxItems=0;
 
 int wordCollected[3];
@@ -250,7 +252,7 @@ struct PALETTE_DATA {
 int mapWidth=0;
 int mapHeight=0;
 int numGems=0;
-int levelNumber = 0;
+int levelNumber = 2;
 
 
 #define HUD_gemTimerStart 60
