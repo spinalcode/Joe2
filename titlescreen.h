@@ -32,8 +32,9 @@ void renderTitleScreen(){
                 tsFile.read(buff, 220);
                 flushLine(Pokitto::Display::palette, buff);
             }
-
+            tsFile.close();
             Pokitto::Display::update(); // needed?
+            
         }
     }
     
@@ -49,7 +50,8 @@ void titleScreen(){
         gameMode=1;
     
         playingMusic1 = false;
-        loadLevel(levelNumber);
+        loadLevel(1);
+        //if(++levelNumber==3)levelNumber=1;
         playingMusic1 = true;
 
         Pokitto::Display::lineFillers[0] = myBGFiller; // map layer
@@ -58,7 +60,7 @@ void titleScreen(){
 
         Pokitto::Display::setTASRowMask(0b1111'11111111'11111111);
         // a little 'wide-screening' to remove some lines for higher frame rate
-        bg.screenTop = 16;
+        bg.screenTop = 20;
         bg.screenBottom = 176-bg.screenTop;
         bg.screenHeight = bg.screenBottom-bg.screenTop;
         
@@ -105,7 +107,7 @@ void gameOverScreen(){
                 tsFile.read(buff, 220);
                 flushLine(Pokitto::Display::palette, buff);
             }
-
+            tsFile.close();
             Pokitto::Display::update(); // needed?
         }
     }

@@ -4,6 +4,7 @@
 bool playSFX;
 bool playBGM;
 File musicFile;
+File sfxFile;
 int LISTENINGSAMPLERATE = 6000;
 bool streamMusic = 1;
 
@@ -19,6 +20,7 @@ const char* sfxnames[] = {
 
 void playRandomTune();
 
+//const char* ambianceBackground[] = {"ephemeral_rift_flute_and_stream.raw","ephemeral_rift_throat_singing.raw"};
 int currentSongNumber = 0;
 
 // enableDAC() from Pokitto MiniLib
@@ -181,8 +183,25 @@ inline uint8_t myMixSound()
 void clearAudioBuffer(){
         for(int t=0; t<audioBufferSize*4; t++){
             audioBuffer[t] = 127;
+            //audioBuffer2[t] = 127;
         }
     return;
+/*
+    if(num==0){
+        for(int t=0; t<audioBufferSize*4; t++){
+            audioBuffer[t] = 127;
+            //audioBuffer2[t] = 127;
+        }
+    }else if(num==1){
+        for(int t=0; t<audioBufferSize*4; t++){
+            audioBuffer[t] = 127;
+        }
+    }else if(num==2){
+        for(int t=0; t<audioBufferSize*4; t++){
+            audioBuffer2[t] = 127;
+        }
+    }
+*/
 }
 
 inline void updateStream(){
@@ -199,6 +218,10 @@ inline void updateStream(){
                 timerCounter++;
             }
         }
+
+        //if(playingMusic2){
+//            if(!sfxFile.read(&audioBuffer2[0], 0)){}
+        //}
 
     }
 }
@@ -245,6 +268,7 @@ void initTimer(uint32_t sampleRate){
 }
 
 void startSong(const char* filename){
+
     playBGM = true;
 
     if(musicFile.openRO(filename)){
@@ -256,8 +280,20 @@ void startSong(const char* filename){
     }
 }
 
+/*
+void startBGFX(const char* filename){
+    if(sfxFile.openRO(filename)){
+        playingMusic2 = true;
+    }else{
+        playingMusic2 = false;
+        clearAudioBuffer(2);
+    }
+}
+*/
+
 void playRandomTune(){
     clearAudioBuffer();
+//    clearAudioBuffer(2);
 
     char fullSongName[32];
     
@@ -271,4 +307,14 @@ void playRandomTune(){
     printf("%s%s\n", folderName, songnames[currentSongNumber]);
     startSong(fullSongName);
 }
+
+/*
+void playBGFX(int number){
+    if(playingMusic2 == false){
+        char fullSFXName[128];
+        snprintf(fullSFXName, sizeof(fullSFXName), "%s%s", folderName, sfxnames[number]);
+        startBGFX(fullSFXName);
+    }
+}
+*/
 

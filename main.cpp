@@ -28,7 +28,7 @@ void write_data_16(uint16_t data);
 
 #ifndef POK_SIM
 // set hardware volume quite low
-SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL
+SoftwareI2C swvolpot(P0_4, P0_5); //swapped SDA,SCL 
 #endif
 
 
@@ -80,8 +80,9 @@ void make_pal(void){
 	}
 }
 
+
 void c_menu(){
-    guiPrint(13,6, "PAWS");
+    guiPrint(9,6, "    PAWS");
     
     int numOptions = sizeof(menuText)/sizeof(menuText[0]);
     
@@ -92,13 +93,11 @@ void c_menu(){
     sprintf(tempText,"%d ",myVolume);
     guiPrint(18,11, tempText);
 
-
     drawSprite(55, 47, paw, paw_pal,0,2);
     drawSprite(59, 47, paw, paw_pal,1,2);
     drawSprite(133, 47, paw, paw_pal,0,2);
     drawSprite(137, 47, paw, paw_pal,1,2);
 
-    
     drawSprite(58, 71+(optionNumber*16), tinyJoe[cursorFrame/2], tinyJoe_pal,0,2);
     if(++cursorFrame>=12)cursorFrame=0;
 
@@ -196,7 +195,7 @@ int rightCollision(int x, int y){
 void startAnimation(int x, int y, int x1, int y1, int speed, int itemType, int startFrame, int maxFrame, const uint8_t *imageData,const uint16_t *paletteData, uint8_t bitDepth){
 
     int useSprite=0;
-    for(int t=0; t<MAX_ANIMS; t++){
+    for(int t=MAXANIMS; t; t--){
         if(animSprite[t].used==false){useSprite=t;}
     }
     animSprite[useSprite].imageData = imageData;
@@ -216,43 +215,9 @@ void startAnimation(int x, int y, int x1, int y1, int speed, int itemType, int s
     animSprite[useSprite].used = true;
     animSprite[useSprite].frameCount = 1;
     animSprite[useSprite].frameSize = (imageData[0]*imageData[1])/(8/bitDepth);
+    //printf("size:%d\n",animSprite[useSprite].frameSize);
+
 }
-
-void renderAnimSprites(){
-    // animating sprites - items etc.
-    int numAnimFrames = fpsCount/2;
-    for(int t=MAX_ANIMS; t; t--){
-
-
-        if(animSprite[t].used==true){
-
-            animSprite[t].frame++;
-            if(animSprite[t].frame >= (animSprite[t].maxFrame*animSprite[t].speed)){
-                animSprite[t].frame=animSprite[t].startFrame;
-            }
-
-            int frame = animSprite[t].frame/animSprite[t].speed;
-            drawSprite(animSprite[t].x, animSprite[t].y, &animSprite[t].imageData[frame*(2+animSprite[t].frameSize)], animSprite[t].paletteData,0,animSprite[t].bitDepth);
-
-            animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, animSprite[t].endX, animSprite[t].startX-animSprite[t].endX, numAnimFrames))+animSprite[t].endX;
-            animSprite[t].y = (animSprite[t].startY-easeInOut(animSprite[t].frameCount, animSprite[t].endY, animSprite[t].startY-animSprite[t].endY, numAnimFrames))+animSprite[t].endY;
-            animSprite[t].frameCount++;
-            if(animSprite[t].frameCount>=numAnimFrames){
-                animSprite[t].used = false;
-                if(animSprite[t].type>=10 && animSprite[t].type<=13){wordCollected[animSprite[t].type-10]=1;}
-            }else{
-                if(animSprite[t].type>=10 && animSprite[t].type<=13){
-                    HUD_wordTimer = HUD_wordTimerStart;
-                }else{
-                    HUD_gemTimer = HUD_gemTimerStart;
-                }
-            }
-
-        }
-
-    }
-}
-
 
 void renderSprites(){
 
@@ -261,7 +226,6 @@ void renderSprites(){
             drawSprite(exitDoor[t].x-bg.mapX, exitDoor[t].y-bg.mapY, sprite_door, &pal[doorPalOffset],0,8);
         }
     }
-
 
     for(int t=0; t<maxItems; t++){
         if(items[t].collected == 0){
@@ -302,8 +266,7 @@ void renderSprites(){
         }
     }
     
-
-  
+    
     if(playerDying==0 || playerDying==2){
         if(invincibleCount%4==0 || playerDying==0){
             // player sprite
@@ -317,7 +280,7 @@ void renderSprites(){
         if(player.flip) flipHat = 1-flipHat;
         drawSprite(((player.x>>8)-bg.mapX) - playerDeathHatX[playerDeathFrames[playerDeathFrame]-9], ((player.y>>8)-bg.mapY) - playerDeathHatY[playerDeathFrames[playerDeathFrame]-9], player_sprite[playerDeathHatFrame[playerDeathFrames[playerDeathFrame]-9]], playerSpritePal, flipHat , 4);
         // stars
-        drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY -5, stars[starCount*2], stars_pal,0,4);
+        drawSprite((player.x>>8)-bg.mapX, (player.y>>8)-bg.mapY -5, stars[starCount], stars_pal,0,1);
         if(++starCount>=37)starCount=0;
 
         playerDeathFrame++;
@@ -330,7 +293,33 @@ void renderSprites(){
     }
 
 
-    renderAnimSprites();
+    // animating sprites - items etc.
+    int numAnimFrames = fpsCount/2;
+    for(int t=MAXANIMS; t; t--){
+        if(animSprite[t].used==true){
+            animSprite[t].frame++;
+            if(animSprite[t].frame >= (animSprite[t].maxFrame*animSprite[t].speed)){
+                animSprite[t].frame=animSprite[t].startFrame;
+            }
+            int frame = animSprite[t].frame/animSprite[t].speed;
+
+            drawSprite(animSprite[t].x, animSprite[t].y, &animSprite[t].imageData[frame*(2+animSprite[t].frameSize)], animSprite[t].paletteData,0,animSprite[t].bitDepth);
+
+            animSprite[t].x = (animSprite[t].startX-easeInOut(animSprite[t].frameCount, animSprite[t].endX, animSprite[t].startX-animSprite[t].endX, numAnimFrames))+animSprite[t].endX;
+            animSprite[t].y = (animSprite[t].startY-easeInOut(animSprite[t].frameCount, animSprite[t].endY, animSprite[t].startY-animSprite[t].endY, numAnimFrames))+animSprite[t].endY;
+            if(++animSprite[t].frameCount>=numAnimFrames){
+                animSprite[t].used = false;
+                if(animSprite[t].type>=10 && animSprite[t].type<=13){wordCollected[animSprite[t].type-10]=1;}
+            }else{
+                if(animSprite[t].type>=10 && animSprite[t].type<=13){
+                    HUD_wordTimer = HUD_wordTimerStart;
+                }else{
+                    HUD_gemTimer = HUD_gemTimerStart;
+                }
+            }
+        }
+    }
+
 
     // HUD
     if(HUD_gemTimer){
@@ -688,6 +677,7 @@ void gameLogic(){
 	if(bg.oldScreenX != bg.screenX || bg.oldScreenY != bg.screenY){
         int mapPosX = bg.screenX * 224;
         int mapPosY = bg.screenY * 176;
+
         updateMap( mapPosX/8 , mapPosY/8, levelNumber, LEVMAIN);
 	}
     bg.windowX = bg.mapX%224;
@@ -767,7 +757,6 @@ int main(){
 
     make_pal();
 
-
     updateButtons(); // update buttons
     while(_A_But[HELD]){
         updateButtons(); // update buttons
@@ -782,7 +771,7 @@ int main(){
     
     clearAudioBuffer();
     //clearAudioBuffer(2);
-//    startSong("/joe2/flute.pcm");
+    startSong("/joe2/flute.pcm");
 
     //if(myVolume>64){myVolume=64;}
     //if(myVolume<0){myVolume=0;}
@@ -801,16 +790,13 @@ int main(){
 
     long int frameCount=0;
 
-    levelNumber = 1;
-
     while( PC::isRunning() ){
         
-    updateStream();
+        updateStream();
 
         if(frameSkip==0){
             fpsCounter++;
             if( !PC::update() ) continue;
-            //PC::update();
 		}else{
             PC::update(0); // don't update screen.
             spriteCount=0; // reset the visible sprites ready for redraw
@@ -840,9 +826,18 @@ int main(){
         updateButtons(); // update buttons
 
         char tempText[64];
+/*
+        for(int t=0; t<10; t++){
+            sprintf(tempText,"%d",bg.miniMap[t+15]);
+            myPrint(t*20,bg.screenBottom-16,tempText);
+        }
+*/
 
         sprintf(tempText,"FPS:%d",fpsCount);
         myPrint(0,bg.screenBottom-8,tempText);
+
+//        sprintf(tempText,"LevelData:%d",levelData);
+//        myPrint(0,bg.screenBottom-16,tempText);
 
         if(PC::getTime() >= lastMillis+1000){
             lastMillis = PC::getTime();

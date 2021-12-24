@@ -75,5 +75,3 @@ const int8_t wiggle[]={
 -6,-6,-5,-5,-4,-4,-3,-3,-2,
 };
 
-const uint8_t myPixel[]={1,1,255};
-

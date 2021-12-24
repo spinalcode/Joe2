@@ -37,8 +37,7 @@
 			"-ggdb"
 		],
 		"RELEASE": [
-			"-Os",
-			"-fforward-propagate"
+			"-Os"
 		],
 		"Pokitto": [
 			"-D_OSCT=2",
@@ -128,8 +127,7 @@
 			"-ggdb"
 		],
 		"RELEASE": [
-			"-Os",
-			"-fforward-propagate"
+			"-Os"
 		],
 		"Pokitto": [
 			"-D_OSCT=2",
@@ -220,8 +218,7 @@
 	},
 	"LDFlags": {
 		"RELEASE": [
-			"-Os",
-			"-fforward-propagate"
+			"-Os"
 		],
 		"DEBUG": [
 			"-Og",
@@ -303,32 +300,26 @@
 	},
 	"meta": {
 		"!Joe_2.bin": {},
-		"!Joe_2_2021_07_21.zip": {},
+		"!Joe_2.eeprom": {},
 		"!Joe_2.elf": {},
-		"!Joe_2_alpha_2021_06_23.zip": {},
-		"!Joe_2_2021_11_20.zip": {},
 		"background.h": {},
-		"buttonhandling.h": {},
 		"credits.h": {},
+		"buttonhandling.h": {},
 		"disassembly.txt": {},
 		"easing.h": {},
 		"font.h": {},
-		"globals.h": {},
 		"joe2": {
 			"sdcard": true
 		},
+		"globals.h": {},
 		"Joe_2_alpha.zip": {},
-		"Joe_2_Pre-Beta_2021_06_20.zip": {},
-		"main.cpp": {},
 		"levelsandmaps.h": {},
-		"music": {
-			"sdcard": true
-		},
+		"log.txt - Shortcut.lnk": {},
+		"main.cpp": {},
 		"My_settings.h": {},
-		"old_screen.h": {},
 		"pause.h": {},
-		"project.json": {},
 		"raw": {},
+		"project.json": {},
 		"samples.h": {},
 		"screen.h": {},
 		"scripts": {},
@@ -337,128 +328,93 @@
 		"sprites.h": {},
 		"titlescreen.h": {},
 		"": {},
-		"joe2/01data.bin": {
-			"sdcard": true
-		},
 		"joe2/01.bin": {
 			"sdcard": true
 		},
-		"joe2/01mid.bin": {
+		"joe2/01data.bin": {
 			"sdcard": true
 		},
 		"joe2/02.bin": {
 			"sdcard": true
 		},
+		"joe2/01mid.bin": {
+			"sdcard": true
+		},
 		"joe2/02data.bin": {
 			"sdcard": true
 		},
-		"joe2/1.bin": {},
 		"joe2/02mid.bin": {},
-		"joe2/1data.bin": {},
-		"joe2/1mid.bin": {},
-		"joe2/Chiptronical.pcm": {},
 		"joe2/Chiptronical.pk": {},
+		"joe2/Chiptronical.pcm": {},
 		"joe2/C_6000.pcm": {},
 		"joe2/C_8000.pcm": {},
-		"joe2/C_8000.pk": {},
-		"joe2/DKCJH2.pcm": {},
-		"joe2/door.raw": {},
 		"joe2/door1.raw": {},
+		"joe2/C_8000.pk": {},
+		"joe2/door.raw": {},
+		"joe2/DKCJH2.pcm": {},
 		"joe2/door1.raw.bak": {},
 		"joe2/flute.pcm": {
 			"sdcard": true
 		},
+		"joe2/levelstuff.txt": {},
 		"joe2/gameoverscreen.bmp": {
 			"sdcard": true
 		},
-		"joe2/gameoverscreen.psp": {},
-		"joe2/levelstuff.txt": {},
 		"joe2/levelstuff_01.txt": {},
+		"joe2/gameoverscreen.psp": {},
 		"joe2/levelstuff_02.txt": {},
-		"joe2/scratch.pcm": {
-			"sdcard": true
-		},
 		"joe2/settings.ini": {
 			"sdcard": true
 		},
+		"joe2/titlescreen.psp": {},
 		"joe2/titlescreen.bmp": {
 			"sdcard": true
 		},
-		"joe2/titlescreen.psp": {},
-		"music/tiletest": {},
-		"raw/133726__ephemeral-rift__native-american-flute-in-d-minor-and-stream.mp3": {},
-		"raw/160909__racche__scratch-speed.wav": {},
+		"joe2/scratch.pcm": {
+			"sdcard": true
+		},
 		"raw/16x16.gif": {},
 		"raw/16x16.h": {},
-		"raw/256.pal": {},
-		"raw/269476__kwahmah-02__clean-record-scratch.flac": {},
-		"raw/260614__kwahmah-02__pop.wav": {},
 		"raw/64x64.gif": {},
+		"raw/color_gem.bmp": {},
 		"raw/64x64.h": {},
 		"raw/bluegem.bmp": {},
-		"raw/boing.pcm": {},
-		"raw/boing.wav": {},
-		"raw/boing1.wav": {},
-		"raw/bonus_room.bmp": {},
-		"raw/bounce.wav": {},
-		"raw/color_gem.bmp": {},
 		"raw/color_sprite.bmp": {},
 		"raw/color_gem2.bmp": {},
-		"raw/color_sprite_w.bmp": {},
 		"raw/door.bmp": {},
+		"raw/color_sprite_w.bmp": {},
 		"raw/door_01.bmp": {},
-		"raw/dooranim.bmp": {},
-		"raw/emeny1.bmp": {},
 		"raw/enemy1.bmp": {},
 		"raw/enemy2.bmp": {},
-		"raw/enemy3.bmp": {},
+		"raw/emeny1.bmp": {},
 		"raw/font88.bmp": {},
 		"raw/font88solid.bmp": {},
-		"raw/gem.bmp": {},
+		"raw/enemy3.bmp": {},
 		"raw/gems.bmp": {},
+		"raw/gem.bmp": {},
 		"raw/greengem.bmp": {},
-		"raw/gui.psp": {},
-		"raw/guiFont.bmp": {},
-		"raw/heart.bmp": {},
-		"raw/guitiles.bmp": {},
-		"raw/houses.psp": {},
 		"raw/Image1.bmp": {},
-		"raw/Image6.bmp": {},
-		"raw/img2pok.exe": {},
+		"raw/heart.bmp": {},
 		"raw/joe2sprites.pal": {},
-		"raw/joe_more_frames.bmp": {},
+		"raw/Image6.bmp": {},
+		"raw/Newtonsoft.Json.dll": {},
 		"raw/jszip.js": {},
 		"raw/j_letter.bmp": {},
-		"raw/letter_j.h": {},
-		"raw/MapReCon2.bmx": {},
-		"raw/MapReCon2.bmx.bak": {},
-		"raw/MapReCon2.exe": {},
-		"raw/Newtonsoft.Json.dll": {},
 		"raw/palette_joe2.bmp": {},
 		"raw/palette.bmp": {},
-		"raw/pause.psp": {},
-		"raw/paw.bmp": {},
 		"raw/player_sprite.bmp": {},
-		"raw/pop_16col.pal": {},
 		"raw/redgem.bmp": {},
 		"raw/roll.bmp": {},
+		"raw/stars.bmp": {},
 		"raw/ruby.psp": {},
 		"raw/testPalette.bmp": {},
-		"raw/stars.bmp": {},
-		"raw/tinyJoe.bmp": {},
 		"raw/token.bmp": {},
 		"raw/watt32.pal": {},
 		"raw/_img2pok.exe": {},
-		"raw/_pop.wav": {},
-		"scripts/collisionTile.bin": {},
-		"scripts/midmap.bin": {},
-		"scripts/palette.bin": {},
 		"scripts/ModConverter.js": {},
-		"scripts/tilemap.bin": {},
 		"scripts/TilemapConverter.js": {},
-		"scripts/tiles.bin": {},
-		"music/tiletest/DKCJH.pcm": {},
-		"music/tiletest/DKCJH2.pcm": {}
+		"raw/Sav2D07.tmp": {},
+		"raw/SavC49E.tmp": {}
 	},
 	"BUILDFlags": {
 		"Pokitto": {}

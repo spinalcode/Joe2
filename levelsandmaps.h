@@ -47,67 +47,92 @@ void reSaturate(double changeRed, double changeGreen, double changeBlue){
 
 void updateMap(int mx, int my, int levNum, int map){
 
-    File file;
-
-    uint16_t *mapData;
-    char levelFilename[40]; // doesn't need to be this long...
-
     if(map == LEVMAIN){
-        mapData = &bg.miniMap[0];
-        snprintf(levelFilename,sizeof(levelFilename),"joe2/%02d.bin",levNum);
-    }
-    if(map == LEVMID){
-        mapData = &bg.midminiMap[0];
-        snprintf(levelFilename,sizeof(levelFilename),"joe2/%02dMid.bin",levNum);
-    }
+        auto minMap = &bg.miniMap[0];
+        uint32_t t=0;
+        // The map in RAM is 2x2 physical screens
+        bg.miniMap[t++] = 28*2;
+        bg.miniMap[t++] = 22*2;
 
-    uint16_t*tempMap;
+        char levelFilename[32]; // doesn't need to be this long...
+        sprintf(levelFilename,"joe2/%02d.bin",levNum);
 
-    uint32_t t=0;
-    // The map in RAM is 2x2 physical screens
-    mapData[t++] = 28*2;
-    mapData[t++] = 22*2;
-
-    tempMap = &mapData[2];
-    uint16_t tempData[56]={0};
-
-    if(file.openRO(levelFilename)){
-        uint16_t mWidth;
-        file.read(&mWidth, 2);
-        for(int y=0; y<mapData[1]; y++){
-            file.seek(4+(mx*2)+(mWidth*2)*(my+y));
-            file.read(&mapData[t], mapData[0]*2);
-            //file.read(&tempData[0], mapData[0]*2);
-            //for(int x=0; x<mapData[0]; x++){
-            //    mapData[t+x] = tempData[x];
-            //}
-            t+=mapData[0];
+        File file;
+        if(file.openRO(levelFilename)){
+            char tempText[128];
+            sprintf(tempText,"Opened '%s' for reading mainbg\r", levelFilename);
+            uint16_t mWidth;
+            file.read(&mWidth, 2);
+            sprintf(tempText,"map width is %d\r", mWidth);
+            for(int y=0; y<bg.miniMap[1]; y++){
+                file.seek(4+(mx*2)+(mWidth*2)*(my+y));
+                file.read(&bg.miniMap[t], bg.miniMap[0]*2);
+                t+=bg.miniMap[0];
+            }
+            file.close();
         }
     }
 
+
+    if(map == LEVMID){
+
+        uint32_t t=0;
+        char levelFilename[32];
+        sprintf(levelFilename,"joe2/%02dMid.bin",levNum);
+
+        bg.midminiMap[t++] = 28*2;
+        bg.midminiMap[t++] = 22*2;
+        
+        char tempText[128];
+        sprintf(tempText,"Opened '%s' for reading midbg\r", levelFilename);
+
+        File file;
+        if(file.openRO(levelFilename)){
+            uint16_t mWidth;
+            file.read(&mWidth, 2);
+
+            for(int y=0; y<bg.midminiMap[1]; y++){
+                file.seek(4+(mx*2)+(mWidth*2)*(my+y));
+                file.read(&bg.midminiMap[t], bg.midminiMap[0]*2);
+                t+=bg.midminiMap[0];
+            }
+        }
+        file.close();
+    }
+    
+    
+    
 }
 
 
 
 void initMap(int levNum){
-    printf("Init Map \n");
-    char levelFilename[40];
-    snprintf(levelFilename,sizeof(levelFilename),"joe2/%02d.bin",levNum);
+
+    char levelFilename[64];
+    sprintf(levelFilename,"joe2/%02d.bin",levNum);
+
+    char tempText[100];    
     File file1;
     if(file1.openRO(levelFilename)){
-        file1.read(&bg.mapWidth, 2);
-        printf("mapWidth:%d\n",bg.mapWidth);
-        file1.read(&bg.mapHeight, 2);
-        printf("mapHeight:%d\n",bg.mapHeight);
+        if(file1.read(&bg.mapWidth, 2)){
+            printf("mapWidth:%d\n",bg.mapWidth);
+            sprintf(tempText,"mapWidth:%d\n",bg.mapWidth);
+        }
+        if(file1.read(&bg.mapHeight, 2)){
+            printf("mapHeight:%d\n",bg.mapHeight);
+            sprintf(tempText,"mapHeight:%d\n",bg.mapHeight);
+        }
+        file1.close();
     }
-    //file1.close();
 
-    snprintf(levelFilename,sizeof(levelFilename),"joe2/%02dmid.bin",levNum);
+    sprintf(levelFilename,"joe2/%02dmid.bin",levNum);
     if(file1.openRO(levelFilename)){
         file1.read(&bg.midmapWidth, 2);
+        sprintf(tempText,"midMapWidth:%d\n",bg.midmapWidth);
         file1.read(&bg.midmapHeight, 2);
+        sprintf(tempText,"midMapHeight:%d\n",bg.midmapHeight);
+        file1.close();
     }
-    //file1.close();
 }
 
 void loadHotSwapData(const char*levelTilename){
@@ -115,7 +140,8 @@ void loadHotSwapData(const char*levelTilename){
 
     // hotswap the level data
     levelData = LevelData::load(levelTilename); 
-    //midmap = reinterpret_cast<const uint16_t*>(&bg.midminiMap[0]);
+    char textLine[32];
+    sprintf(textLine,"LevelData = %d\n",levelData);
     tiles = &levelData[paletteSize + 2];
     uint16_t tilesOffset = *reinterpret_cast<const uint16_t*>(&levelData[paletteSize]);
     collisionTile = &levelData[paletteSize + 2 + tilesOffset];
@@ -157,7 +183,12 @@ void resetLevelData(){
 }
 
 
+
+
 void loadLevel(int levNum){
+
+    char tempText[100];
+    sprintf(tempText,"loading level:%d\n",levNum);
 
     resetLevelData();
 
@@ -169,29 +200,39 @@ void loadLevel(int levNum){
     bg.numBlue;
     bg.totalGemsCollected = 0;
 
-    initMap(levNum);
+//    initMap(levNum);
+
+    char levelFilename[64];
+    sprintf(levelFilename,"joe2/%02d.bin",levNum);
+
+    File file1;
+    if(file1.openRO(levelFilename)){
+        file1.read(&bg.mapWidth, 2);
+        file1.read(&bg.mapHeight, 2);
+        file1.close();
+    }
+
+    sprintf(levelFilename,"joe2/%02dmid.bin",levNum);
+    if(file1.openRO(levelFilename)){
+        file1.read(&bg.midmapWidth, 2);
+        file1.read(&bg.midmapHeight, 2);
+        file1.close();
+    }
+
 
     // multiplyer for bacground scenery offset
     bg.multiplyX = (bg.midmapWidth<<8) / (bg.mapWidth+(bg.midmapWidth*2));
     bg.multiplyY = (bg.midmapHeight<<8) / (bg.mapHeight+(bg.midmapHeight*2));
 
-    char levelTilename[40];
-    snprintf(levelTilename,sizeof(levelTilename),"joe2/%02dData.bin",levNum);
-    printf(levelTilename);
-    printf("\n");
-
-    loadHotSwapData(levelTilename);
+    sprintf(levelFilename,"joe2/%02ddata.bin",levNum);
+    loadHotSwapData(levelFilename);
 
     uint16_t mapSize[2];
-    char levelFilename[40];
-    snprintf(levelFilename,sizeof(levelFilename),"joe2/%02d.bin",levNum);
-    printf(levelFilename);
-    printf("\n");
-
-    File file1;
+    snprintf(levelFilename, sizeof(levelFilename),"joe2/%02d.bin",levNum);
     if(file1.openRO(levelFilename)){
         file1.read(mapSize, sizeof(mapSize));
     }
+    
     // check collision map for collectable tilesOffset
     mapWidth = mapSize[0];
     mapHeight = mapSize[1];
@@ -232,7 +273,7 @@ void loadLevel(int levNum){
                     items[maxItems].paletteData = &gem_pal[0];
                     items[maxItems].bitDepth = 4;
                     items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
-                    if(maxItems < MAXIMUMITEMS) maxItems++;
+                    if(maxItems < MAXITEMS)maxItems++;
             }
             if(tl == tileType[5]){ // 5 = green gem
                     bg.numGreen++;
@@ -248,7 +289,7 @@ void loadLevel(int levNum){
                     items[maxItems].paletteData = &gem_pal[6];
                     items[maxItems].bitDepth = 4;
                     items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
-                    if(maxItems < MAXIMUMITEMS) maxItems++;
+                    if(maxItems < MAXITEMS)maxItems++;
             }
             if(tl == tileType[6]){ // 6 = blue gem
                     bg.numBlue++;
@@ -264,7 +305,7 @@ void loadLevel(int levNum){
                     items[maxItems].paletteData = &gem_pal[12];
                     items[maxItems].bitDepth = 4;
                     items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
-                    if(maxItems < MAXIMUMITEMS) maxItems++;
+                    if(maxItems < MAXITEMS)maxItems++;
             }
             
             if(tl == tileType[7]){ // 7 = Keith - the first enemy
@@ -281,7 +322,7 @@ void loadLevel(int levNum){
                     items[maxItems].paletteData = gamePalette.rgb;
                     items[maxItems].bitDepth = 8;
                     items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
-                    if(maxItems < MAXIMUMITEMS) maxItems++;
+                    if(maxItems < MAXITEMS)maxItems++;
             }
             if(tl == tileType[8]){ // 8 = Tom - the second enemy
 
@@ -297,7 +338,7 @@ void loadLevel(int levNum){
                     items[maxItems].paletteData = gamePalette.rgb;
                     items[maxItems].bitDepth = 8;
                     items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
-                    if(maxItems < MAXIMUMITEMS) maxItems++;
+                    if(maxItems < MAXITEMS)maxItems++;
 
             }
         
@@ -315,8 +356,9 @@ void loadLevel(int levNum){
                     items[maxItems].paletteData = gamePalette.rgb;
                     items[maxItems].bitDepth = 8;
                     items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
-                    if(maxItems < MAXIMUMITEMS) maxItems++;
+                    if(maxItems < MAXITEMS)maxItems++;
             }
+            
             if(tl == tileType[11]){ // 11 = Level Complete Door
                 exitDoor[numDoors].x = x*8;
                 exitDoor[numDoors].y = y*8;
@@ -325,6 +367,7 @@ void loadLevel(int levNum){
                 printf("Doors %d:%d,%d\n", numDoors,exitDoor[numDoors].x,exitDoor[numDoors].y);
                 if(numDoors < MAXDOORS) numDoors++;
             }
+            
             if(tl == tileType[12]){ // 12 = bonus gem
                     items[maxItems].x = (x-1)*8;
                     items[maxItems].y = y*8;
@@ -338,7 +381,7 @@ void loadLevel(int levNum){
                     items[maxItems].paletteData = color_gem_pal;
                     items[maxItems].bitDepth = 8;
                     items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
-                    if(maxItems < MAXIMUMITEMS) maxItems++;
+                    if(maxItems < MAXITEMS)maxItems++;
             }
 
             if(tl == tileType[13]){ // 13 = Letter J,O,E
@@ -354,19 +397,21 @@ void loadLevel(int levNum){
                     items[maxItems].frameSize = (items[maxItems].imageData[0]*items[maxItems].imageData[1])/(8/items[maxItems].bitDepth);
                     items[maxItems].startFrame = 0;
                     items[maxItems].maxFrame = 8;
-                    if(maxItems < MAXIMUMITEMS) maxItems++;
+                    if(maxItems < MAXITEMS)maxItems++;
                     lettersFound++;
             }
 
         }// y>0
         x++;
     }
-    //file1.close();
+    file1.close();
 
     bg.totalGemsToCollect = bg.numRed+bg.numGreen+bg.numBlue;
 
     player.x = player.startX;
     player.y = player.startY;
+
+    sprintf(tempText,"player start at %d,%d \n",player.x,player.y);
 
     // update the screen before actually playing the level or else!!!
     bg.mapX = (player.x>>8)-110;
@@ -379,7 +424,7 @@ void loadLevel(int levNum){
     bg.oldScreenY = bg.screenY;
     bg.screenX = bg.mapX/224;
     bg.screenY = bg.mapY/176;
-    int mapPosX = (bg.screenX * 224);
+    int mapPosX = bg.screenX * 224;
     int mapPosY = bg.screenY * 176;
     // update the main level map
     updateMap( mapPosX/8 , mapPosY/8, levelNumber, LEVMAIN);
@@ -392,5 +437,4 @@ void loadLevel(int levNum){
 
     bg.oldMapX = player.x-28160;
     bg.oldMapY = player.y-22528;
-
 }

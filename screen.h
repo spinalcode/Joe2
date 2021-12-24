@@ -34,7 +34,6 @@ void clearPalette(int numColours) {
     Pokitto::Display::paletteptr = Pokitto::Display::palette;
 }
 
-
 uint16_t alphaBlendRGB565(uint32_t fg, uint32_t bg, uint8_t alpha) {
 
     fg = (fg | fg << 16) & 0x07e0f81f;
@@ -43,7 +42,6 @@ uint16_t alphaBlendRGB565(uint32_t fg, uint32_t bg, uint8_t alpha) {
     bg &= 0x07e0f81f;
         return (uint16_t)(bg | bg >> 16);
 }
-
 
 void GUILine(std::uint8_t* line, std::uint32_t y, bool skip){
 
@@ -96,35 +94,6 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
 
     #define width 16
 
-//    if(bg.totalGemsCollected == bg.totalGemsToCollect){
-/*
-        uint32_t py = y/8;
-        uint32_t multiplied = (32*py) + 450; // the 450 is to select a different part of the sprite
-        
-        auto offsetedPal = pal + doorPalOffset;
-        auto spriteSource = sprite_door + multiplied;
-
-        // for animating the background effect
-        #define SixteenBitLine1()\
-            if(*ScanLine){\
-                *Palette++ = *ScanLine;\
-            }else{\
-                if(*Line)\
-                    *Palette++ = rgbPalette[*Line];\
-                else\
-                    *Palette++ = offsetedPal[spriteSource[plasmaScreen[x]]];\
-            }\
-            *ScanLine++ = 0;\
-            *Line++ = x++;
-
-        for(uint32_t x=0; x<220;){
-            SixteenBitLine1(); 
-            SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1();
-            SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1(); SixteenBitLine1();
-        }
-*/
-//    }else{
-        
         auto scanLine = &Pokitto::Display::palette[16]; // start 32 pixels in because of underflow
         #define width 16
         #define halfWidth 8
@@ -136,7 +105,7 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
             for(int32_t spriteIndex = 1; spriteIndex<=spriteCount; spriteIndex++){
                 auto &sprite = sprites[spriteIndex];
                 if(sprite.bit==1){
-                    if((int)y >= sprite.y && (int)y < sprite.y + sprite.imageData[0]){
+                    if(y >= sprite.y && y < sprite.y + sprite.imageData[1]){
                         if(sprite.x>-width && sprite.x<PROJ_LCDWIDTH){
                             if(sprite.hFlip){
                                 uint32_t so = 2+(2 * (y2-sprite.y));
@@ -146,7 +115,7 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
                                 auto palette = sprite.paletteData;
                                 auto pixel = *si;
                                 #define midLoop()\
-                                    if(((pixel=*si)>>7)&3) *sl = palette[(pixel>>7)&1];\
+                                    if(((pixel=*si)>>7)&1) *sl = palette[(pixel>>7)&1];\
                                     sl++;\
                                     if((pixel>>6)&1) *sl = palette[(pixel>>6)&1];\
                                     sl++;\
@@ -172,7 +141,7 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
                                 auto palette = sprite.paletteData;
                                 auto pixel = *si;
                                 #define midLoop()\
-                                    if(((pixel=*si)>>7)&3) *sl = palette[(pixel>>7)&1];\
+                                    if(((pixel=*si)>>7)&1) *sl = palette[(pixel>>7)&1];\
                                     sl++;\
                                     if((pixel>>6)&1) *sl = palette[(pixel>>6)&1];\
                                     sl++;\
@@ -196,7 +165,7 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
                     } // if Y
                 } // 1bpp
                 if(sprite.bit==2){
-                    if((int)y >= sprite.y && (int)y < sprite.y + sprite.imageData[0]){
+                    if((int)y >= sprite.y && (int)y < sprite.y + sprite.imageData[1]){
                         if(sprite.x>-width && sprite.x<PROJ_LCDWIDTH){
                             if(sprite.hFlip){
                                 uint32_t so = 2+(2 * (y2-sprite.y));
@@ -237,7 +206,7 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
                     } // if Y
                 } // 2bpp
                 if(sprite.bit==4){
-                    if((int)y >= sprite.y && (int)y < sprite.y + sprite.imageData[0]){
+                    if((int)y >= sprite.y && (int)y < sprite.y + sprite.imageData[1]){
                         if(sprite.x>-width && sprite.x<PROJ_LCDWIDTH){
                             if(sprite.hFlip){
                                 uint32_t so = 2+(halfWidth * (y2-sprite.y));
@@ -269,7 +238,7 @@ void spriteFill(std::uint8_t* line, std::uint32_t y, bool skip){
                     } // if Y
                 } // 4bpp
                 if(sprite.bit==8){
-                    if((int)y >= sprite.y && (int)y < sprite.y + sprite.imageData[0]){
+                    if((int)y >= sprite.y && (int)y < sprite.y + sprite.imageData[1]){
                         if(sprite.x>-width && sprite.x<PROJ_LCDWIDTH){
                             if(sprite.hFlip){
                                 uint32_t so = 2+(width * (y2-sprite.y));
@@ -360,6 +329,7 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
     uint32_t lineOffset;
     uint32_t thisTile;
     auto lineP = &Pokitto::Display::palette[0];
+    auto mainPal = &gamePalette.rgb[0];
 
     #define bgTileLine()\
         thisTile = bg.miniMap[2+tileIndex++]&0x83FF;\
@@ -368,24 +338,24 @@ void myBGFiller(std::uint8_t* line, std::uint32_t y, bool skip){
         x+=8;\
         if(thisTile&32768){\
             auto tilesP = &tiles[7 + lineOffset];\
-            *lineP++ = gamePalette.rgb[*tilesP--];\
-            *lineP++ = gamePalette.rgb[*tilesP--];\
-            *lineP++ = gamePalette.rgb[*tilesP--];\
-            *lineP++ = gamePalette.rgb[*tilesP--];\
-            *lineP++ = gamePalette.rgb[*tilesP--];\
-            *lineP++ = gamePalette.rgb[*tilesP--];\
-            *lineP++ = gamePalette.rgb[*tilesP--];\
-            *lineP++ = gamePalette.rgb[*tilesP--];\
+            *lineP++ = mainPal[*tilesP--];\
+            *lineP++ = mainPal[*tilesP--];\
+            *lineP++ = mainPal[*tilesP--];\
+            *lineP++ = mainPal[*tilesP--];\
+            *lineP++ = mainPal[*tilesP--];\
+            *lineP++ = mainPal[*tilesP--];\
+            *lineP++ = mainPal[*tilesP--];\
+            *lineP++ = mainPal[*tilesP--];\
         }else{\
             auto tilesP = &tiles[lineOffset];\
-            *lineP++ = gamePalette.rgb[*tilesP++];\
-            *lineP++ = gamePalette.rgb[*tilesP++];\
-            *lineP++ = gamePalette.rgb[*tilesP++];\
-            *lineP++ = gamePalette.rgb[*tilesP++];\
-            *lineP++ = gamePalette.rgb[*tilesP++];\
-            *lineP++ = gamePalette.rgb[*tilesP++];\
-            *lineP++ = gamePalette.rgb[*tilesP++];\
-            *lineP++ = gamePalette.rgb[*tilesP++];\
+            *lineP++ = mainPal[*tilesP++];\
+            *lineP++ = mainPal[*tilesP++];\
+            *lineP++ = mainPal[*tilesP++];\
+            *lineP++ = mainPal[*tilesP++];\
+            *lineP++ = mainPal[*tilesP++];\
+            *lineP++ = mainPal[*tilesP++];\
+            *lineP++ = mainPal[*tilesP++];\
+            *lineP++ = mainPal[*tilesP++];\
         }
 
     // unrolling this loop got an extra 10fps

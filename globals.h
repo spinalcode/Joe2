@@ -13,23 +13,42 @@ bool interlaceScreen=false;
 bool frameJump = false;
 
 // Make a hotswap area for level data
-// size = 72*1024k, unique id = 0
-//using LevelData = Hotswap<48*1024, 0>; // multiple of 8kb = Palette and level tiles
-using LevelData = Hotswap<48*1024, 0>; // multiple of 8kb = Palette and level tiles
-//using LevelData = Hotswap<64*1024, 0>; // multiple of 8kb = Palette and level tiles
+// size = 64*1024k, unique id = 0
+using LevelData = Hotswap<64*1024, 0>; // multiple of 32kb = Palette and level tiles - should really be 96KB
 
-int lastLoad=0;
-int mapPos;
+/*
+int logline = 0;
+const char*logFile = "joe2/log.txt";
+void updateLog(const char*text){
+    //return;
+    File txtfile;
+    int txtsize = strlen(text);
+    if(txtfile.openRW(logFile,0,1)){
+        txtfile.write(text, strlen(text));
+        //txtfile.write("\r");
+    }else{
+        // if file didn;t op, assume it doesnt exist and create it
+        txtfile.openRW(logFile,1,0);
+        txtfile.write(text, strlen(text));
+        //txtfile.write("\r");
+    }
+    txtfile.close();
+}
+*/
 
-#define PRESCAN 88 // left side of scanline that is off screen
-uint16_t scanLine[396]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
+//int lastLoad=0;
+//int mapPos;
+
+//#define PRESCAN 88 // left side of scanline that is off screen
+//uint16_t scanLine[396]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
+//uint8_t myLine[396]; // there's an issue with screen garbage for some reason, so the buffer is WAY larger than it needs to be
 
 int myVolume = 5;
 
 #define MAXSTEP 64
 #define MAXSPEED 512
 #define PLAYER_SPEED 512
-#define MAX_ANIMS 20
+#define MAXANIMS 12
 #define GEM_ANIM_SPEED 3
 
 uint8_t cursorFrame=0;
@@ -66,14 +85,14 @@ bool gamePaused = false;
 
 
 // for my own sprite renderer
-#define NUMSPRITES 48
+#define NUMSPRITES 64
 struct SPRITE_DATA {
     const uint16_t *paletteData; // palette data
     const uint8_t *imageData; // image data
-    int x;  // x postition
-    int y;  // y position
-    int hFlip;
-    int offset; // tile render pixel offset
+    int16_t x;  // x postition
+    int16_t y;  // y position
+    bool hFlip;
+    int16_t offset; // tile render pixel offset
     uint8_t bit;
 } sprites[NUMSPRITES];
 int spriteCount = -1;
@@ -97,10 +116,9 @@ struct ANIMATION_DATA {
     int type;
     bool used=false;
     int frameCount=0;
-} animSprite[MAX_ANIMS+1];
+} animSprite[MAXANIMS];
 
-
-#define MAXDOORS  20
+#define MAXDOORS 6
 struct DOOR_DATA {
     int x;
     int y;
@@ -112,13 +130,13 @@ struct DOOR_DATA {
 uint8_t numDoors = 0;
 uint8_t atDoor = 99;
 
-int levNum=0;
-uint8_t tileType[20]; // to be read from the first row in the collision map
+uint8_t levNum=0;
+uint8_t tileType[32]; // to be read from the first row in the collision map
 #define NOTHING 0
-int SOLID = 1;
-int JUMPTHROUGH = 2;
-int DEATHCOLOUR = 10;
-int DOORCOLOUR = 11;
+#define SOLID  1
+#define JUMPTHROUGH 2
+#define DEATHCOLOUR 10
+#define DOORCOLOUR 11
 
 const uint8_t satRamp[]={0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,5,5,6,6,6,7,7,8,8,9,9,10,11,11,12,13,14,15,15,16,17,18,19,20,21,22,23,25,26,27,28,30,31,32,34,35,37,39,40,42,44,45,47,48,51,53,54,57,58,60,62,64,67,68,71,72,75,76,79,81,82,85,87,90,92,93,95,96,98,100};
 
@@ -150,7 +168,6 @@ struct BACKGROUND_DATA {
     int midscreenY = 0;
     int midoldScreenX = 0;
     int midoldScreenY = 0;
-
 
     int multiplyX;
     int multiplyY;
@@ -202,7 +219,7 @@ struct PLAYER_DATA {
 
 uint8_t onGround[10]; // buffer of being on the ground, for safer jumping
 
-#define MAXIMUMITEMS 100
+#define MAXITEMS 100
 struct COLLECTABLES_DATA {
     const uint16_t *paletteData; // palette data
     const uint8_t *imageData; // image data
@@ -223,7 +240,7 @@ struct COLLECTABLES_DATA {
     uint8_t step;
     uint8_t frameCount=0;
     uint8_t bitDepth;
-} items[MAXIMUMITEMS];
+} items[MAXITEMS];
 int maxItems=0;
 
 int wordCollected[3];
@@ -252,7 +269,7 @@ struct PALETTE_DATA {
 int mapWidth=0;
 int mapHeight=0;
 int numGems=0;
-int levelNumber = 2;
+int levelNumber = 0;
 
 
 #define HUD_gemTimerStart 60
